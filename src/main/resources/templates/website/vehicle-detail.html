@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${seo != null ? seo.pageTitle : v.name + ' Price, Specs, Features | CarDekho Deals'}">Vehicle</title>
+    <meta th:if="${seo != null}" name="description" th:content="${seo.metaDescription}">
+    <meta th:if="${seo != null}" name="keywords" th:content="${seo.metaKeywords}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/website.css}" rel="stylesheet">
+</head>
+<body>
+
+<div th:replace="~{website/fragments/layout :: nav('vehicles')}"></div>
+
+<!-- Breadcrumb -->
+<div class="breadcrumb-bar">
+    <div class="container">
+        <a href="/">Home</a> <span class="mx-2">›</span>
+        <a href="/vehicles">Cars</a> <span class="mx-2">›</span>
+        <a th:href="@{/vehicles}" th:text="${v.brand}">Brand</a> <span class="mx-2">›</span>
+        <span style="color:var(--text);font-weight:600" th:text="${v.name}">Model</span>
+    </div>
+</div>
+
+<!-- Sticky section tabs -->
+<nav class="detail-tab-bar" id="detailTabBar">
+    <div class="container">
+        <ul class="nav nav-tabs">
+            <li class="nav-item"><a class="nav-link active" href="#overview">Overview</a></li>
+            <li class="nav-item" th:if="${!#lists.isEmpty(variants)}"><a class="nav-link" href="#variants">Variants</a></li>
+            <li class="nav-item" th:if="${!#lists.isEmpty(specifications)}"><a class="nav-link" href="#specifications">Specs</a></li>
+            <li class="nav-item" th:if="${!#lists.isEmpty(features)}"><a class="nav-link" href="#features">Features</a></li>
+            <li class="nav-item" th:if="${!#lists.isEmpty(images)}"><a class="nav-link" href="#gallery">Gallery</a></li>
+            <li class="nav-item" th:if="${!#lists.isEmpty(reviews) or !#lists.isEmpty(expertReviews)}"><a class="nav-link" href="#reviews">Reviews</a></li>
+            <li class="nav-item" th:if="${!#lists.isEmpty(faqs) or !#lists.isEmpty(modelFaqs)}"><a class="nav-link" href="#faqs">FAQs</a></li>
+        </ul>
+    </div>
+</nav>
+
+<!-- Vehicle Hero -->
+<div class="vehicle-hero" id="overview">
+    <div class="container">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7">
+                <img th:if="${v.heroImage != null}" th:src="${v.heroImage}" th:alt="${v.name}" class="hero-img">
+                <div th:unless="${v.heroImage != null}" class="hero-placeholder"><i class="fas fa-car"></i></div>
+            </div>
+            <div class="col-lg-5">
+                <h1 class="vehicle-title" th:text="${v.name}">Vehicle Name</h1>
+                <p class="vehicle-meta">
+                    <span th:text="${v.brand}"></span> •
+                    <span th:text="${v.category}"></span> •
+                    <span th:text="${v.modelYear}"></span>
+                </p>
+
+                <div class="price-box mb-3" th:if="${v.startingPrice != null}">
+                    <div class="label">Price starts at</div>
+                    <div class="price" style="white-space:nowrap">₹&nbsp;<span th:text="${#numbers.formatDecimal(v.startingPrice, 1, 0)}"></span> *</div>
+                    <div class="label" th:if="${v.maxPrice != null}" style="margin-top:4px;white-space:nowrap">
+                        Up to ₹&nbsp;<span th:text="${#numbers.formatDecimal(v.maxPrice, 1, 0)}"></span>
+                    </div>
+                    <div style="font-size:11px;opacity:.7;margin-top:8px">* Ex-showroom price</div>
+                </div>
+
+                <div class="quick-specs">
+                    <div th:if="${v.fuelType != null}" class="quick-spec"><i class="fas fa-gas-pump"></i><span th:text="${v.fuelType}"></span></div>
+                    <div th:if="${v.transmissionType != null}" class="quick-spec"><i class="fas fa-cog"></i><span th:text="${v.transmissionType}"></span></div>
+                    <div th:if="${v.seatingCapacity != null}" class="quick-spec"><i class="fas fa-users"></i><span th:text="${v.seatingCapacity + ' Seater'}"></span></div>
+                    <div th:if="${v.bodyType != null}" class="quick-spec"><i class="fas fa-car-side"></i><span th:text="${v.bodyType}"></span></div>
+                </div>
+
+                <div class="mt-4 d-flex gap-2 flex-wrap">
+                    <a href="#variants" class="btn-cta"><i class="fas fa-list me-1"></i>View Variants</a>
+                    <a th:if="${!#lists.isEmpty(brochures)}" th:href="${brochures[0].fileUrl}" class="btn-cta-outline" target="_blank">
+                        <i class="fas fa-download me-1"></i>Brochure
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-wrapper">
+<div class="container">
+    <div class="row g-4">
+        <div class="col-lg-8">
+
+            <!-- Description - moved to bottom -->
+
+            <!-- Variants -->
+            <div class="section-card" id="variants" th:if="${!#lists.isEmpty(variants)}"
+                 data-pd-section="variants" data-pd-limit="4">
+                <h4><i class="fas fa-list"></i>Variants &amp; Price</h4>
+                <div class="table-responsive">
+                    <table class="variant-table">
+                        <thead><tr><th>Variant</th><th>Fuel</th><th>Transmission</th><th>Mileage</th><th>Price</th></tr></thead>
+                        <tbody>
+                        <tr th:each="vr : ${variants}" data-pd-item>
+                            <td class="fw-600" th:text="${vr.variantName}"></td>
+                            <td th:text="${vr.fuelType}"></td>
+                            <td th:text="${vr.transmission}"></td>
+                            <td th:text="${vr.mileage}"></td>
+                            <td class="variant-price" style="white-space:nowrap" th:text="${vr.price != null ? '₹ ' + #numbers.formatDecimal(vr.price, 1, 0) : '-'}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <a th:if="${#lists.size(variants) > 4}" href="javascript:void(0)" class="read-more-toggle" data-pd-toggle
+                   data-pd-label-more="Read More" data-pd-label-less="Show Less">Read More <i class="fas fa-chevron-down ms-1" style="font-size:10px"></i></a>
+            </div>
+
+            <!-- Used Car Details -->
+            <div class="section-card" id="usedCarDetails" th:if="${v.vehicleType == 'USED'}">
+                <h4><i class="fas fa-car-side" style="color:#FF5A00"></i>Used Car Details</h4>
+                <div class="row g-3">
+                    <div class="col-6 col-md-3" th:if="${v.kmDriven != null}">
+                        <div style="background:var(--bg-section);border-radius:10px;padding:14px;text-align:center">
+                            <i class="fas fa-tachometer-alt fa-lg mb-2" style="color:#FF5A00;display:block"></i>
+                            <div style="font-size:1.1rem;font-weight:700" th:text="${#numbers.formatDecimal(v.kmDriven, 1, 0) + ' km'}"></div>
+                            <div style="font-size:12px;color:#64748b">KM Driven</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3" th:if="${v.ownershipCount != null}">
+                        <div style="background:var(--bg-section);border-radius:10px;padding:14px;text-align:center">
+                            <i class="fas fa-user fa-lg mb-2" style="color:#FF5A00;display:block"></i>
+                            <div style="font-size:1.1rem;font-weight:700" th:text="${v.ownershipCount + (v.ownershipCount == 1 ? 'st' : v.ownershipCount == 2 ? 'nd' : v.ownershipCount == 3 ? 'rd' : 'th') + ' Owner'}"></div>
+                            <div style="font-size:12px;color:#64748b">Ownership</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3" th:if="${v.registrationYear != null}">
+                        <div style="background:var(--bg-section);border-radius:10px;padding:14px;text-align:center">
+                            <i class="fas fa-calendar fa-lg mb-2" style="color:#FF5A00;display:block"></i>
+                            <div style="font-size:1.1rem;font-weight:700" th:text="${v.registrationYear}"></div>
+                            <div style="font-size:12px;color:#64748b">Reg. Year</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3" th:if="${v.condition != null}">
+                        <div style="background:var(--bg-section);border-radius:10px;padding:14px;text-align:center">
+                            <i class="fas fa-star fa-lg mb-2" style="color:#FF5A00;display:block"></i>
+                            <div style="font-size:1.1rem;font-weight:700" th:text="${v.condition}"></div>
+                            <div style="font-size:12px;color:#64748b">Condition</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-2 mt-1" style="font-size:13px;color:#475569">
+                    <div class="col-6 col-md-4" th:if="${v.registrationState != null}">
+                        <i class="fas fa-map-marker-alt me-1 text-muted"></i><strong>Reg. State:</strong> <span th:text="${v.registrationState}"></span>
+                    </div>
+                    <div class="col-6 col-md-4" th:if="${v.insuranceType != null}">
+                        <i class="fas fa-shield-alt me-1 text-muted"></i><strong>Insurance:</strong> <span th:text="${v.insuranceType}"></span>
+                    </div>
+                    <div class="col-6 col-md-4" th:if="${v.sellerType != null}">
+                        <i class="fas fa-store me-1 text-muted"></i><strong>Seller:</strong> <span th:text="${v.sellerType}"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Specifications -->
+            <div class="section-card" id="specifications" th:if="${!#lists.isEmpty(specifications)}"
+                 data-pd-section="specifications" data-pd-limit="5">
+                <h4><i class="fas fa-tachometer-alt"></i>Specifications</h4>
+                <div th:each="s : ${specifications}" data-pd-item>
+                    <div class="spec-row">
+                        <div class="spec-name" th:text="${s.specName}"></div>
+                        <div class="spec-value" th:text="${s.specValue}"></div>
+                    </div>
+                </div>
+                <a th:if="${#lists.size(specifications) > 5}" href="javascript:void(0)" class="read-more-toggle" data-pd-toggle
+                   data-pd-label-more="Read More" data-pd-label-less="Show Less">Read More <i class="fas fa-chevron-down ms-1" style="font-size:10px"></i></a>
+            </div>
+
+            <!-- Features -->
+            <div class="section-card" id="features" th:if="${!#lists.isEmpty(features)}"
+                 data-pd-section="features" data-pd-limit="6">
+                <h4><i class="fas fa-check-double"></i>Key Features</h4>
+                <div class="feature-grid">
+                    <div th:each="f : ${features}" class="feature-item" data-pd-item>
+                        <i class="fas fa-check-circle"></i>
+                        <span th:text="${f.featureName}"></span>
+                    </div>
+                </div>
+                <a th:if="${#lists.size(features) > 6}" href="javascript:void(0)" class="read-more-toggle" data-pd-toggle
+                   data-pd-label-more="Read More" data-pd-label-less="Show Less">Read More <i class="fas fa-chevron-down ms-1" style="font-size:10px"></i></a>
+            </div>
+
+            <!-- Colors -->
+            <div class="section-card" th:if="${!#lists.isEmpty(colors)}">
+                <h4><i class="fas fa-palette"></i>Available Colors</h4>
+                <div class="d-flex gap-4 flex-wrap">
+                    <div th:each="c : ${colors}" class="color-item">
+                        <div class="color-swatch" th:style="'background:' + ${c.colorCode}"></div>
+                        <div class="color-label" th:text="${c.colorName}"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gallery -->
+            <div class="section-card" id="gallery" th:if="${!#lists.isEmpty(images)}"
+                 data-pd-section="gallery" data-pd-limit="6">
+                <h4><i class="fas fa-images"></i>Gallery</h4>
+                <div class="gallery-grid" id="galleryGrid">
+                    <img th:each="img, stat : ${images}" class="gallery-img" data-pd-item
+                         th:src="${img.imageUrl}" th:alt="${img.altText != null ? img.altText : 'Vehicle Image'}"
+                         th:attr="data-category=${img.category}, data-order=${img.displayOrder != null ? img.displayOrder : stat.index}"
+                         th:onclick="'openLightbox(' + ${stat.index} + ')'"
+                         onerror="this.style.display='none'"
+                         th:loading="${stat.index >= 6 ? 'lazy' : 'eager'}">
+                </div>
+                <a th:if="${#lists.size(images) > 6}" href="javascript:void(0)" class="read-more-toggle" data-pd-toggle
+                   data-pd-label-more="View More" data-pd-label-less="Show Less">
+                    View More (<span th:text="${#lists.size(images) - 6}"></span> more) <i class="fas fa-chevron-down ms-1" style="font-size:10px"></i>
+                </a>
+            </div>
+
+            <!-- Videos -->
+            <div class="section-card" th:if="${!#lists.isEmpty(videos)}">
+                <h4><i class="fas fa-play-circle"></i>Videos</h4>
+                <div class="row g-3">
+                    <div th:each="vid : ${videos}" class="col-md-6">
+                        <div class="ratio ratio-16x9" style="border-radius:var(--radius);overflow:hidden;border:1px solid var(--border)">
+                            <iframe th:src="${vid.videoUrl}" allowfullscreen></iframe>
+                        </div>
+                        <p class="mt-2 fw-600" style="font-size:13px" th:text="${vid.title}"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FAQs -->
+            <div class="section-card" id="faqs" th:if="${!#lists.isEmpty(faqs) or !#lists.isEmpty(modelFaqs)}">
+                <h4><i class="fas fa-question-circle"></i>Frequently Asked Questions</h4>
+                <div class="accordion" id="faqAccordion">
+                    <!-- Vehicle-specific FAQs -->
+                    <div th:each="faq, iterStat : ${faqs}" class="accordion-item faq-accordion-item" th:if="${faq.isActive}">
+                        <h2 class="accordion-header" th:id="'faqHead-' + ${iterStat.index}">
+                            <button class="accordion-button collapsed" type="button"
+                                    data-bs-toggle="collapse"
+                                    th:attr="data-bs-target='#faqBody-' + ${iterStat.index}, aria-controls='faqBody-' + ${iterStat.index}"
+                                    aria-expanded="false">
+                                <span th:text="${faq.question}">Question</span>
+                            </button>
+                        </h2>
+                        <div th:id="'faqBody-' + ${iterStat.index}" class="accordion-collapse collapse"
+                             th:attr="aria-labelledby='faqHead-' + ${iterStat.index}"
+                             data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                <div class="faq-answer-wrap" style="max-height:7.5em;overflow:hidden;transition:max-height .3s" th:text="${faq.answer}">Answer</div>
+                                <a href="javascript:void(0)" class="faq-read-more">Read More <i class="fas fa-chevron-down ms-1" style="font-size:9px"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Model FAQs from MODEL_FAQ_QUESTION_ANSWER -->
+                    <div th:each="mfaq, mStat : ${modelFaqs}" class="accordion-item faq-accordion-item">
+                        <h2 class="accordion-header" th:id="'mfaqHead-' + ${mStat.index}">
+                            <button class="accordion-button collapsed" type="button"
+                                    data-bs-toggle="collapse"
+                                    th:attr="data-bs-target='#mfaqBody-' + ${mStat.index}, aria-controls='mfaqBody-' + ${mStat.index}"
+                                    aria-expanded="false">
+                                <span th:text="${mfaq.question}">Question</span>
+                            </button>
+                        </h2>
+                        <div th:id="'mfaqBody-' + ${mStat.index}" class="accordion-collapse collapse"
+                             th:attr="aria-labelledby='mfaqHead-' + ${mStat.index}"
+                             data-bs-parent="#faqAccordion">
+                            <div class="accordion-body">
+                                <div class="faq-answer-wrap" style="max-height:7.5em;overflow:hidden;transition:max-height .3s" th:utext="${mfaq.answer}">Answer</div>
+                                <a href="javascript:void(0)" class="faq-read-more">Read More <i class="fas fa-chevron-down ms-1" style="font-size:9px"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <a href="javascript:void(0)" id="faqSectionToggle" class="read-more-toggle" style="display:none">Read More <i class="fas fa-chevron-down ms-1" style="font-size:10px"></i></a>
+
+                <!-- FAQ Schema.org structured data for SEO -->
+                <script type="application/ld+json" th:inline="javascript">
+                {
+                    "@context": "https://schema.org",
+                    "@type": "FAQPage",
+                    "mainEntity": [
+                        /*[# th:each="faq : ${faqs}"]*/
+                        {
+                            "@type": "Question",
+                            "name": /*[[${faq.question}]]*/ "",
+                            "acceptedAnswer": {
+                                "@type": "Answer",
+                                "text": /*[[${faq.answer}]]*/ ""
+                            }
+                        },
+                        /*[/]*/
+                        /*[# th:each="mfaq : ${modelFaqs}"]*/
+                        {
+                            "@type": "Question",
+                            "name": /*[[${mfaq.question}]]*/ "",
+                            "acceptedAnswer": {
+                                "@type": "Answer",
+                                "text": /*[[${mfaq.answer}]]*/ ""
+                            }
+                        }
+                        /*[/]*/
+                    ]
+                }
+                </script>
+            </div>
+
+            <!-- Reviews -->
+            <div class="section-card" id="reviews" th:if="${!#lists.isEmpty(reviews)}">
+                <h4><i class="fas fa-star"></i>User Reviews</h4>
+                <div th:each="r : ${reviews}" class="review-card">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <strong style="font-size:14px" th:text="${r.title}"></strong>
+                        <div class="review-stars">
+                            <i th:each="i : ${#numbers.sequence(1,5)}"
+                               th:class="${i <= r.rating ? 'fas fa-star' : 'far fa-star'}"></i>
+                        </div>
+                    </div>
+                    <p style="font-size:13.5px;color:var(--text-secondary);margin-bottom:6px;line-height:1.7" th:text="${r.reviewContent}"></p>
+                    <div class="pros-cons-grid mt-3">
+                        <div th:if="${r.pros != null and !r.pros.isEmpty()}" class="pro-item">
+                            <span class="pro-tag"><i class="fas fa-check-circle"></i> Pros</span>
+                            <p style="font-size:13px; color:var(--text-light); margin:0;" th:text="${r.pros}"></p>
+                        </div>
+                        <div th:if="${r.cons != null and !r.cons.isEmpty()}" class="con-item">
+                            <span class="con-tag"><i class="fas fa-times-circle"></i> Cons</span>
+                            <p style="font-size:13px; color:var(--text-light); margin:0;" th:text="${r.cons}"></p>
+                        </div>
+                    </div>
+                    <div class="review-meta mt-2"><i class="fas fa-user me-1"></i>by <span th:text="${r.reviewerName}"></span></div>
+                </div>
+            </div>
+
+            <!-- Expert Reviews -->
+            <div class="section-card" th:if="${!#lists.isEmpty(expertReviews)}">
+                <h4><i class="fas fa-pen-fancy"></i>Expert Reviews</h4>
+                <div th:each="er : ${expertReviews}" style="border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:14px">
+                    <div class="d-flex align-items-start gap-3 mb-2">
+                        <div style="width:44px;height:44px;border-radius:50%;background:var(--primary-light);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                            <i class="fas fa-user-tie" style="color:var(--primary)"></i>
+                        </div>
+                        <div style="flex:1">
+                            <strong style="font-size:15px" th:text="${er.title}"></strong>
+                            <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">
+                                <span th:text="${er.reviewerName}"></span>
+                                <span th:if="${er.reviewerDesignation != null}"> • <span th:text="${er.reviewerDesignation}"></span></span>
+                                <span th:if="${er.sourceName != null}"> • <span th:text="${er.sourceName}"></span></span>
+                            </div>
+                            <div th:if="${er.rating != null}" style="margin-top:4px">
+                                <span style="background:var(--primary);color:white;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:700" th:text="${er.rating + '/10'}"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <p style="font-size:13.5px;color:var(--text-secondary);line-height:1.7;margin-bottom:8px;max-height:7.5em;overflow:hidden;transition:max-height .3s" class="expert-review-text" th:text="${er.reviewContent}"></p>
+                    <a href="javascript:void(0)" class="expert-review-toggle">Read More <i class="fas fa-chevron-down ms-1" style="font-size:9px"></i></a>
+                    <div th:if="${er.pros != null and !er.pros.isEmpty()}" style="margin-top:8px">
+                        <span style="color:#059669;font-weight:600;font-size:12px"><i class="fas fa-thumbs-up me-1"></i>Pros:</span>
+                        <span style="font-size:12px;color:var(--text-secondary)" th:text="${er.pros}"></span>
+                    </div>
+                    <div th:if="${er.cons != null and !er.cons.isEmpty()}" style="margin-top:4px">
+                        <span style="color:#DC2626;font-weight:600;font-size:12px"><i class="fas fa-thumbs-down me-1"></i>Cons:</span>
+                        <span style="font-size:12px;color:var(--text-secondary)" th:text="${er.cons}"></span>
+                    </div>
+                    <div th:if="${er.verdict != null and !er.verdict.isEmpty()}" style="margin-top:8px;background:var(--bg-section);padding:10px 14px;border-radius:8px;border-left:3px solid var(--primary)">
+                        <span style="font-weight:600;font-size:12px;color:var(--primary)">Verdict:</span>
+                        <span style="font-size:13px;color:var(--text)" th:text="${er.verdict}"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- News & Latest Updates -->
+            <div class="section-card" th:if="${!#lists.isEmpty(news)}">
+                <h4><i class="fas fa-newspaper"></i>News &amp; Latest Updates</h4>
+                <div th:each="n : ${news}" style="border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;display:flex;gap:14px;align-items:start">
+                    <div th:if="${n.imageUrl != null}" style="flex-shrink:0">
+                        <img th:src="${n.imageUrl}" style="width:80px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border)" th:alt="${n.title}">
+                    </div>
+                    <div style="flex:1">
+                        <h6 style="font-size:14px;font-weight:600;margin-bottom:4px" th:text="${n.title}"></h6>
+                        <p style="font-size:12.5px;color:var(--text-secondary);margin-bottom:6px;line-height:1.6" th:text="${n.shortDescription != null ? n.shortDescription : (n.content != null and n.content.length() > 120 ? n.content.substring(0,120)+'...' : n.content)}"></p>
+                        <div style="font-size:11px;color:var(--text-secondary)">
+                            <span th:if="${n.sourceName != null}" style="background:var(--bg-section);padding:2px 8px;border-radius:4px;font-weight:500" th:text="${n.sourceName}"></span>
+                            <span th:if="${n.category != null}" class="ms-1" style="background:var(--primary-light);color:var(--primary);padding:2px 8px;border-radius:4px;font-weight:600" th:text="${n.category}"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- About Section (at bottom) -->
+            <div class="section-card" th:if="${v.fullDescription != null and !v.fullDescription.isEmpty()}">
+                <h4><i class="fas fa-info-circle"></i>About <span th:text="${v.name}"></span></h4>
+                <div id="descriptionBox" style="position:relative">
+                    <p id="descText" style="font-size:14px;line-height:1.9;color:var(--text-secondary);overflow:hidden;max-height:7.5em;transition:max-height .3s" th:text="${v.fullDescription}"></p>
+                    <a href="javascript:void(0)" id="descToggle" class="read-more-toggle">Read More <i class="fas fa-chevron-down ms-1" style="font-size:10px"></i></a>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="sticky-sidebar">
+
+                <!-- Best Deal Summary Widget -->
+                <div th:if="${dealerDeals != null and !dealerDeals.isEmpty()}" id="deals" class="mb-4"
+                     style="background:white;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow-md)">
+                    <!-- Header gradient -->
+                    <div style="background:linear-gradient(135deg,var(--primary),#FF8C38);padding:18px 20px">
+                        <div style="display:flex;align-items:center;justify-content:space-between">
+                            <div style="color:white">
+                                <div style="font-size:11px;font-weight:600;opacity:.85;text-transform:uppercase;letter-spacing:.8px">Best Deal Available</div>
+                                <div style="font-size:28px;font-weight:900;letter-spacing:-1px;font-family:'Outfit',sans-serif;white-space:nowrap"
+                                     th:with="bestDeal=${dealerDeals[0]}">
+                                    Save ₹ <span th:text="${#numbers.formatDecimal(bestDeal.totalSavings, 1, 0)}"></span>
+                                </div>
+                            </div>
+                            <div style="background:rgba(255,255,255,0.2);border-radius:50%;width:48px;height:48px;display:flex;align-items:center;justify-content:center">
+                                <i class="fas fa-tags" style="color:white;font-size:20px"></i>
+                            </div>
+                        </div>
+                        <div th:with="bestDeal=${dealerDeals[0]}" th:if="${v.startingPrice != null}"
+                             style="margin-top:10px;background:rgba(0,0,0,0.15);border-radius:8px;padding:8px 14px;display:flex;justify-content:space-between;align-items:center">
+                            <span style="font-size:12px;color:rgba(255,255,255,0.8)">Effective Price</span>
+                            <span style="font-size:16px;font-weight:800;color:white;white-space:nowrap">
+                                ₹ <span th:text="${#numbers.formatDecimal(v.startingPrice.subtract(bestDeal.totalSavings), 1, 0)}"></span> *
+                            </span>
+                        </div>
+                    </div>
+                    <!-- Breakdown -->
+                    <div style="padding:16px 20px" th:with="bestDeal=${dealerDeals[0]}">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+                            <div th:if="${bestDeal.cashDiscount != null and bestDeal.cashDiscount > 0}"
+                                 style="background:var(--bg-section);padding:10px 12px;border-radius:8px;border:1px solid var(--border)">
+                                <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px"><i class="fas fa-money-bill-wave me-1" style="color:var(--primary)"></i>Cash</div>
+                                <div style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap">₹ <span th:text="${#numbers.formatDecimal(bestDeal.cashDiscount, 1, 0)}"></span></div>
+                            </div>
+                            <div th:if="${bestDeal.exchangeBonus != null and bestDeal.exchangeBonus > 0}"
+                                 style="background:var(--bg-section);padding:10px 12px;border-radius:8px;border:1px solid var(--border)">
+                                <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px"><i class="fas fa-exchange-alt me-1" style="color:var(--primary)"></i>Exchange</div>
+                                <div style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap">₹ <span th:text="${#numbers.formatDecimal(bestDeal.exchangeBonus, 1, 0)}"></span></div>
+                            </div>
+                            <div th:if="${bestDeal.corporateDiscount != null and bestDeal.corporateDiscount > 0}"
+                                 style="background:var(--bg-section);padding:10px 12px;border-radius:8px;border:1px solid var(--border)">
+                                <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px"><i class="fas fa-building me-1" style="color:var(--primary)"></i>Corporate</div>
+                                <div style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap">₹ <span th:text="${#numbers.formatDecimal(bestDeal.corporateDiscount, 1, 0)}"></span></div>
+                            </div>
+                            <div th:if="${bestDeal.financeBenefit != null and bestDeal.financeBenefit > 0}"
+                                 style="background:var(--bg-section);padding:10px 12px;border-radius:8px;border:1px solid var(--border)">
+                                <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px"><i class="fas fa-credit-card me-1" style="color:var(--primary)"></i>Finance</div>
+                                <div style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap">₹ <span th:text="${#numbers.formatDecimal(bestDeal.financeBenefit, 1, 0)}"></span></div>
+                            </div>
+                            <div th:if="${bestDeal.insuranceBenefit != null and bestDeal.insuranceBenefit > 0}"
+                                 style="background:var(--bg-section);padding:10px 12px;border-radius:8px;border:1px solid var(--border)">
+                                <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px"><i class="fas fa-shield-alt me-1" style="color:var(--primary)"></i>Insurance</div>
+                                <div style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap">₹ <span th:text="${#numbers.formatDecimal(bestDeal.insuranceBenefit, 1, 0)}"></span></div>
+                            </div>
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:5px;padding:10px 14px;background:var(--bg-section);border-radius:8px;margin-bottom:14px;border:1px solid var(--border)">
+                            <span th:if="${bestDeal.dealerName != null}" style="font-size:12px;color:var(--text-light);display:flex;align-items:center;gap:6px">
+                                <i class="fas fa-store" style="color:var(--primary);width:14px"></i>
+                                <span th:text="${bestDeal.dealerName}"></span>
+                                <span th:if="${bestDeal.city != null}" style="color:var(--text-muted)">• <span th:text="${bestDeal.city}"></span></span>
+                            </span>
+                            <span th:if="${bestDeal.endDate != null}" style="font-size:12px;color:var(--text-light);display:flex;align-items:center;gap:6px">
+                                <i class="fas fa-clock" style="color:var(--primary);width:14px"></i>Offer ends <span th:text="${bestDeal.endDate}"></span>
+                            </span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="javascript:void(0)" onclick="scrollToId('getQuoteForm')"
+                               class="btn-cta flex-grow-1 text-center" style="font-size:13px;padding:11px">
+                                <i class="fas fa-bolt me-1"></i>Get Best Deal
+                            </a>
+                            <a href="javascript:void(0)" onclick="showDealerContact(this)"
+                               class="btn-cta-outline flex-grow-1 text-center" style="font-size:13px;padding:11px"
+                               th:data-dealer="${bestDeal.dealerName}" th:data-city="${bestDeal.city}">
+                                <i class="fas fa-phone me-1"></i>Callback
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Offers -->
+                <div class="section-card" th:if="${!#lists.isEmpty(offers)}">
+                    <h4><i class="fas fa-tags"></i>Offers</h4>
+                    <div th:each="o : ${offers}" class="offer-card mb-3">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="offer-badge" th:text="${o.discountType == 'percent' ? o.discountAmount + '% OFF' : '₹' + o.discountAmount + ' OFF'}"></span>
+                            <strong style="font-size:13px" th:text="${o.offerTitle}"></strong>
+                        </div>
+                        <p style="font-size:12.5px;color:var(--text-secondary);margin:0;line-height:1.6" th:text="${o.offerDescription}"></p>
+                    </div>
+                </div>
+
+                <!-- Brochures -->
+                <div class="section-card" th:if="${!#lists.isEmpty(brochures)}">
+                    <h4><i class="fas fa-file-pdf"></i>Brochure</h4>
+                    <div th:each="b : ${brochures}" class="mb-2">
+                        <a th:href="${b.fileUrl}" class="btn-cta-outline d-block text-center" target="_blank">
+                            <i class="fas fa-download me-1"></i><span th:text="${b.title}"></span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Quick Contact / Get Quote -->
+                <div class="section-card">
+                    <h4><i class="fas fa-phone"></i>Get Best Price</h4>
+                    <form id="getQuoteForm" onsubmit="submitQuote(event)">
+                        <input type="hidden" id="qVehicleId" th:value="${v.id}">
+                        <input type="hidden" id="qVehicleName" th:value="${v.name}">
+                        <div class="mb-3"><input type="text" id="qName" class="form-control" placeholder="Your Name" required style="border-radius:8px;padding:10px 14px;border:1.5px solid var(--border);font-size:13.5px"></div>
+                        <div class="mb-3"><input type="tel" id="qMobile" class="form-control" placeholder="Mobile Number" required minlength="10" maxlength="10" pattern="[0-9]{10}" style="border-radius:8px;padding:10px 14px;border:1.5px solid var(--border);font-size:13.5px"></div>
+                        <div class="mb-3"><input type="email" id="qEmail" class="form-control" placeholder="Email (optional)" style="border-radius:8px;padding:10px 14px;border:1.5px solid var(--border);font-size:13.5px"></div>
+                        <div class="mb-3"><input type="text" id="qCity" class="form-control" placeholder="City" style="border-radius:8px;padding:10px 14px;border:1.5px solid var(--border);font-size:13.5px"></div>
+                        <button type="submit" id="qSubmitBtn" class="btn-cta w-100">
+                            <i class="fas fa-paper-plane me-1"></i>Get Best Price
+                        </button>
+                        <div id="qResult" class="mt-2" style="font-size:12px"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- YouTube Reels Section -->
+<section th:if="${youtubeEnabled}" style="background:var(--secondary);color:white;padding:48px 0">
+    <div class="container">
+        <h3 class="fw-800 mb-4 text-center" style="letter-spacing:-0.3px"><i class="fab fa-youtube text-danger me-2"></i>Videos</h3>
+        <div id="ytVideosContainer" th:data-channel="${youtubeChannelId}" th:data-layout="${youtubeLayout}" th:data-limit="${youtubeLimit}">
+            <p class="text-center text-muted">Loading videos...</p>
+        </div>
+    </div>
+</section>
+
+<script th:if="${youtubeEnabled}">
+(async function() {
+    const container = document.getElementById('ytVideosContainer');
+    const channelOrUrl = container.dataset.channel;
+    const layout = container.dataset.layout || 'grid';
+    const limit = parseInt(container.dataset.limit) || 6;
+
+    let videoId = null;
+    if (channelOrUrl.includes('/shorts/')) {
+        videoId = channelOrUrl.match(/\/shorts\/([^/?&]+)/)?.[1];
+    } else if (channelOrUrl.includes('watch?v=')) {
+        videoId = channelOrUrl.match(/[?&]v=([^&]+)/)?.[1];
+    } else if (channelOrUrl.includes('youtu.be/')) {
+        videoId = channelOrUrl.match(/youtu\.be\/([^?&]+)/)?.[1];
+    }
+
+    let html = '';
+    if (videoId) {
+        if (layout === 'shorts') {
+            html = `<div class="d-flex justify-content-center"><div style="width:320px;border-radius:14px;overflow:hidden">
+                <iframe src="https://www.youtube.com/embed/${videoId}" style="width:100%;height:560px;border:none" allowfullscreen></iframe>
+            </div></div>`;
+        } else {
+            html = `<div class="ratio ratio-16x9" style="max-width:700px;margin:0 auto;border-radius:12px;overflow:hidden">
+                <iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>
+            </div>`;
+        }
+    } else if (channelOrUrl.startsWith('UC')) {
+        html = '<div class="row g-3 justify-content-center">';
+        for (let i = 0; i < limit; i++) {
+            html += `<div class="col-6 col-md-4 col-lg-3"><a href="https://www.youtube.com/channel/${channelOrUrl}" target="_blank" class="text-decoration-none">
+                <div style="background:rgba(255,255,255,0.05);border-radius:10px;padding:20px;text-align:center;border:1px solid rgba(255,255,255,0.1)">
+                    <i class="fab fa-youtube text-danger" style="font-size:32px"></i>
+                    <p style="color:#888;font-size:12px;margin-top:8px">View on YouTube</p>
+                </div></a></div>`;
+        }
+        html += '</div>';
+    }
+
+    if (!html) {
+        html = `<div class="text-center"><a href="${channelOrUrl.startsWith('http') ? channelOrUrl : 'https://youtube.com'}" target="_blank" class="btn-cta"><i class="fab fa-youtube me-2"></i>Watch on YouTube</a></div>`;
+    }
+    container.innerHTML = html;
+})();
+</script>
+
+<!-- Mobile sticky price bar -->
+<div class="mobile-price-bar" th:if="${v.startingPrice != null}">
+    <div>
+        <small>Ex-showroom from</small>
+        <div class="mobile-price">₹&nbsp;<span th:text="${#numbers.formatDecimal(v.startingPrice, 1, 0)}"></span></div>
+    </div>
+    <a href="javascript:void(0)" onclick="scrollToId('getQuoteForm')" class="btn-cta">
+        <i class="fas fa-bolt me-1"></i>Get Best Price
+    </a>
+</div>
+
+<div th:replace="~{website/fragments/layout :: footer}"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/website.js}"></script>
+
+<!-- Lightbox Modal -->
+<div id="lightboxModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:10000;align-items:center;justify-content:center;flex-direction:column" onclick="closeLightbox(event)">
+    <button onclick="closeLightbox()" style="position:absolute;top:16px;right:20px;background:none;border:none;color:white;font-size:28px;cursor:pointer;z-index:10001"><i class="fas fa-times"></i></button>
+    <button id="lbPrev" onclick="event.stopPropagation();navigateLightbox(-1)" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.15);border:none;color:white;font-size:24px;width:48px;height:48px;border-radius:50%;cursor:pointer"><i class="fas fa-chevron-left"></i></button>
+    <button id="lbNext" onclick="event.stopPropagation();navigateLightbox(1)" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.15);border:none;color:white;font-size:24px;width:48px;height:48px;border-radius:50%;cursor:pointer"><i class="fas fa-chevron-right"></i></button>
+    <img id="lbImage" style="max-width:90%;max-height:80vh;border-radius:8px;object-fit:contain" src="" alt="">
+    <div id="lbCounter" style="color:rgba(255,255,255,0.7);margin-top:12px;font-size:13px;font-weight:500"></div>
+</div>
+
+<script>
+// ─── Lightbox Gallery ────────────────────────────
+let lbImages = [];
+let lbIndex = 0;
+
+function openLightbox(index) {
+    const imgs = document.querySelectorAll('.gallery-img');
+    lbImages = Array.from(imgs).map(img => img.src);
+    lbIndex = index;
+    showLightboxImage();
+    document.getElementById('lightboxModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox(e) {
+    if (e && e.target !== document.getElementById('lightboxModal')) return;
+    document.getElementById('lightboxModal').style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+function navigateLightbox(dir) {
+    lbIndex += dir;
+    if (lbIndex < 0) lbIndex = lbImages.length - 1;
+    if (lbIndex >= lbImages.length) lbIndex = 0;
+    showLightboxImage();
+}
+
+function showLightboxImage() {
+    document.getElementById('lbImage').src = lbImages[lbIndex];
+    document.getElementById('lbCounter').textContent = (lbIndex + 1) + ' / ' + lbImages.length;
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', function(e) {
+    const lb = document.getElementById('lightboxModal');
+    if (lb.style.display !== 'flex') return;
+    if (e.key === 'ArrowLeft') navigateLightbox(-1);
+    else if (e.key === 'ArrowRight') navigateLightbox(1);
+    else if (e.key === 'Escape') { document.getElementById('lightboxModal').style.display = 'none'; document.body.style.overflow = ''; }
+});
+
+// ─── Dealer Contact Popup ─────────────────────────
+function showDealerContact(btn) {
+    const dealer = btn.dataset.dealer || 'Dealer';
+    const city = btn.dataset.city || '';
+    const popup = document.createElement('div');
+    popup.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;border-radius:12px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.3);z-index:10001;min-width:300px;text-align:center';
+    popup.innerHTML = `
+        <div style="width:48px;height:48px;background:var(--primary-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px"><i class="fas fa-store" style="color:var(--primary);font-size:20px"></i></div>
+        <h6 style="font-weight:700;margin-bottom:4px">Dealer Contact Details</h6>
+        <p style="font-size:14px;font-weight:600;margin-bottom:2px">${dealer}</p>
+        <p style="font-size:13px;color:#6B7280;margin-bottom:12px">${city ? '<i class="fas fa-map-marker-alt me-1"></i>' + city : ''}</p>
+        <p style="font-size:13px;color:#6B7280;margin-bottom:16px"><i class="fas fa-info-circle me-1"></i>Our team will connect you with the dealer shortly. Submit the lead form below to get a callback.</p>
+        <button onclick="this.parentElement.remove();document.getElementById('dealerOverlay').remove();document.getElementById('getQuoteForm').scrollIntoView({behavior:'smooth'})" class="btn-cta" style="width:100%;font-size:13px;padding:10px"><i class="fas fa-paper-plane me-1"></i>Get Callback</button>
+        <button onclick="this.parentElement.remove();document.getElementById('dealerOverlay').remove()" style="position:absolute;top:10px;right:14px;background:none;border:none;font-size:18px;color:#9CA3AF;cursor:pointer">&times;</button>
+    `;
+    const overlay = document.createElement('div');
+    overlay.id = 'dealerOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:10000';
+    overlay.onclick = function() { popup.remove(); overlay.remove(); };
+    document.body.appendChild(overlay);
+    document.body.appendChild(popup);
+}
+
+// ─── Quote form ──────────────────────────────────
+async function submitQuote(e) {
+    e.preventDefault();
+    const btn = document.getElementById('qSubmitBtn');
+    const result = document.getElementById('qResult');
+
+    const mobile = document.getElementById('qMobile').value.trim();
+    if (mobile.length !== 10 || !/^\d{10}$/.test(mobile)) {
+        result.innerHTML = '<span class="text-danger">Enter valid 10-digit mobile number</span>';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Submitting...';
+    result.innerHTML = '';
+
+    try {
+        const resp = await fetch('/api/quote/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: document.getElementById('qName').value.trim(),
+                mobile: mobile,
+                email: document.getElementById('qEmail').value.trim(),
+                city: document.getElementById('qCity').value.trim(),
+                vehicleId: parseInt(document.getElementById('qVehicleId').value),
+                vehicleName: document.getElementById('qVehicleName').value,
+                sourcePage: window.location.pathname
+            })
+        });
+        const data = await resp.json();
+
+        if (data.duplicate) {
+            result.innerHTML = '<span class="text-warning"><i class="fas fa-info-circle me-1"></i>' + data.message + '</span>';
+        } else if (data.error) {
+            result.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-circle me-1"></i>' + data.error + '</span>';
+        } else {
+            result.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>' + data.message + '</span>';
+            document.getElementById('getQuoteForm').reset();
+        }
+    } catch (err) {
+        result.innerHTML = '<span class="text-danger">Network error. Try again.</span>';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane me-1"></i>Get Best Price';
+    }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,845 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import Vehicle From URL — CarDekho</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/admin.css}" rel="stylesheet">
+    <style>
+        .import-url-box { background: linear-gradient(135deg, #FFF8F3, #FFF3E8); border: 2px solid #FFDCBA; border-radius: 14px; padding: 24px; }
+        .preview-section { display: none; }
+        .preview-section.active { display: block; }
+        .preview-card { background: white; border: 1px solid #e8ecf0; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+        .preview-card h6 { font-size: 13px; font-weight: 700; color: #FF6B00; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+        .preview-img { width: 80px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid #e8ecf0; }
+        .preview-badge { background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+        .spinner-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; z-index: 9999; align-items: center; justify-content: center; flex-direction: column; color: white; }
+        .spinner-overlay.active { display: flex; }
+        .spec-preview { font-size: 13px; padding: 4px 0; border-bottom: 1px solid #f4f6f9; }
+        .feature-tag { display: inline-block; background: #f3f4f6; padding: 3px 10px; border-radius: 5px; font-size: 12px; margin: 2px; }
+        .editable-field { border: 1px dashed #d1d5db; border-radius: 6px; padding: 8px; min-height: 36px; }
+        .editable-field:focus { border-color: #FF6B00; outline: none; background: #FFFBF7; }
+        .url-field-row input:focus { border-color: #FF6B00; box-shadow: 0 0 0 3px rgba(255,107,0,0.1); }
+    </style>
+</head>
+<body>
+<div th:replace="~{admin/fragments/sidebar :: sidebar}"></div>
+<div class="main-content">
+    <div th:replace="~{admin/fragments/sidebar :: topbar('Import Vehicle From URL')}"></div>
+    <div class="content-area">
+
+        <!-- URL Input Section -->
+        <div class="import-url-box mb-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                    <label class="form-label fw-600 mb-0">Import From Multiple Sources</label>
+                    <div class="form-text mt-0">Paste URLs from multiple car listing websites. Data will be merged automatically.</div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button onclick="addUrlField()" class="btn btn-sm btn-outline-primary" title="Add URL">
+                        <i class="fas fa-plus me-1"></i>Add URL
+                    </button>
+                </div>
+            </div>
+
+            <div id="urlFields">
+                <div class="url-field-row d-flex gap-2 mb-2 align-items-center">
+                    <span class="badge bg-secondary" style="width:24px;text-align:center">1</span>
+                    <input type="url" class="form-control import-url-input" placeholder="https://www.cardekho.com/tata/punch" style="font-size:14px;padding:10px 14px">
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeUrlField(this)" title="Remove"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mt-3">
+                <button onclick="fetchMultipleUrls()" class="btn btn-primary" id="fetchBtn" style="padding:10px 24px;font-size:14px">
+                    <i class="fas fa-cloud-download-alt me-2"></i>Fetch & Merge All
+                </button>
+                <button onclick="fetchSingleUrl()" class="btn btn-outline-secondary" style="padding:10px 24px;font-size:14px">
+                    <i class="fas fa-download me-1"></i>Fetch First Only
+                </button>
+            </div>
+
+            <!-- Quick URL Templates -->
+            <div class="mt-3 pt-3" style="border-top:1px dashed #d1d5db">
+                <label style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px">Quick Add — Enter model name:</label>
+                <div class="d-flex gap-2 mt-2 flex-wrap align-items-center">
+                    <input type="text" id="quickModelInput" class="form-control form-control-sm" placeholder="e.g. tata/punch or hyundai/creta" style="width:220px">
+                    <button onclick="quickAddAllSources()" class="btn btn-sm btn-outline-success"><i class="fas fa-magic me-1"></i>Auto-Add All Sources</button>
+                </div>
+                <div class="form-text">Supported: cardekho, carwale, v3cars, carandbike, cars24, cartrade</div>
+            </div>
+        </div>
+
+        <!-- Error/Success Messages -->
+        <div id="alertBox" class="mb-4" style="display:none"></div>
+
+        <!-- Preview Section -->
+        <div id="previewSection" class="preview-section">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h5 class="fw-700 mb-0"><i class="fas fa-eye me-2 text-primary"></i>Preview Imported Data</h5>
+                <div class="d-flex gap-2">
+                    <button onclick="clearImport()" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-times me-1"></i>Clear
+                    </button>
+                    <button onclick="saveVehicle()" class="btn btn-primary btn-sm" id="saveBtn">
+                        <i class="fas fa-save me-1"></i>Save as New Vehicle
+                    </button>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <!-- Main Info -->
+                <div class="col-lg-8">
+                    <div class="preview-card">
+                        <h6><i class="fas fa-car me-1"></i>Vehicle Information (Editable)</h6>
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <label class="form-label" style="font-size:12px">Vehicle Name *</label>
+                                <input type="text" id="pName" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" style="font-size:12px">Brand</label>
+                                <input type="text" id="pBrand" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" style="font-size:12px">Model</label>
+                                <input type="text" id="pModel" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" style="font-size:12px">Category</label>
+                                <select id="pCategory" class="form-select form-select-sm">
+                                    <option value="SUV">SUV</option><option value="Sedan">Sedan</option>
+                                    <option value="Hatchback">Hatchback</option><option value="MPV">MPV</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" style="font-size:12px">Fuel Type</label>
+                                <input type="text" id="pFuel" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" style="font-size:12px">Transmission</label>
+                                <input type="text" id="pTransmission" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" style="font-size:12px">Starting Price (₹)</label>
+                                <input type="number" id="pPrice" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" style="font-size:12px">Max Price (₹)</label>
+                                <input type="number" id="pMaxPrice" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" style="font-size:12px">Seating</label>
+                                <input type="number" id="pSeating" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" style="font-size:12px">Mileage</label>
+                                <input type="text" id="pMileage" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" style="font-size:12px">Short Description</label>
+                                <textarea id="pShortDesc" class="form-control form-control-sm" rows="2"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" style="font-size:12px">Full Description</label>
+                                <textarea id="pFullDesc" class="form-control form-control-sm" rows="4"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Specifications -->
+                    <div class="preview-card" id="specsCard" style="display:none">
+                        <h6><i class="fas fa-cog me-1"></i>Specifications <span id="specCount" class="preview-badge">0</span></h6>
+                        <div id="specsList"></div>
+                    </div>
+
+                    <!-- Variants -->
+                    <div class="preview-card" id="variantsCard" style="display:none">
+                        <h6><i class="fas fa-list me-1"></i>Variants <span id="variantCount" class="preview-badge">0</span></h6>
+                        <div id="variantsList"></div>
+                    </div>
+
+                    <!-- Features -->
+                    <div class="preview-card" id="featuresCard" style="display:none">
+                        <h6><i class="fas fa-star me-1"></i>Features <span id="featureCount" class="preview-badge">0</span></h6>
+                        <div id="featuresList"></div>
+                    </div>
+
+                    <!-- FAQs -->
+                    <div class="preview-card" id="faqsCard" style="display:none">
+                        <h6><i class="fas fa-question-circle me-1"></i>FAQs <span id="faqCount" class="preview-badge">0</span></h6>
+                        <div id="faqsList"></div>
+                    </div>
+
+                    <!-- Expert Reviews -->
+                    <div class="preview-card" id="expertReviewsCard" style="display:none">
+                        <h6><i class="fas fa-pen-fancy me-1"></i>Expert Reviews <span id="expertReviewCount" class="preview-badge">0</span></h6>
+                        <div id="expertReviewsList"></div>
+                    </div>
+
+                    <!-- User Reviews -->
+                    <div class="preview-card" id="userReviewsCard" style="display:none">
+                        <h6><i class="fas fa-star me-1"></i>User Reviews <span id="userReviewCount" class="preview-badge">0</span></h6>
+                        <div id="userReviewsList"></div>
+                    </div>
+
+                    <!-- News -->
+                    <div class="preview-card" id="newsCard" style="display:none">
+                        <h6><i class="fas fa-newspaper me-1"></i>News & Updates <span id="newsCount" class="preview-badge">0</span></h6>
+                        <div id="newsList"></div>
+                    </div>
+
+                    <!-- Pros & Cons -->
+                    <div class="preview-card" id="prosConsCard" style="display:none">
+                        <h6><i class="fas fa-balance-scale me-1"></i>Pros & Cons</h6>
+                        <div id="prosConsList"></div>
+                    </div>
+                </div>
+
+                <!-- Sidebar: Images & Colors -->
+                <div class="col-lg-4">
+                    <div class="preview-card" id="imagesCard" style="display:none">
+                        <h6><i class="fas fa-images me-1"></i>Images <span id="imageCount" class="preview-badge">0</span></h6>
+                        <div id="imagesList" class="d-flex flex-wrap gap-2"></div>
+                    </div>
+
+                    <div class="preview-card" id="colorsCard" style="display:none">
+                        <h6><i class="fas fa-palette me-1"></i>Colors <span id="colorCount" class="preview-badge">0</span></h6>
+                        <div id="colorsList" class="d-flex flex-wrap gap-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="spinnerOverlay" class="spinner-overlay">
+    <div class="spinner-border text-light mb-3" style="width:48px;height:48px"></div>
+    <h5>Fetching vehicle data...</h5>
+    <p style="opacity:.7">Extracting information from the page</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/admin.js}"></script>
+<script>
+let importedData = null;
+
+// ─── URL Field Management ────────────────────────
+let urlCounter = 1;
+
+function addUrlField() {
+    urlCounter++;
+    const container = document.getElementById('urlFields');
+    const row = document.createElement('div');
+    row.className = 'url-field-row d-flex gap-2 mb-2 align-items-center';
+    row.innerHTML = `
+        <span class="badge bg-secondary" style="width:24px;text-align:center">${urlCounter}</span>
+        <input type="url" class="form-control import-url-input" placeholder="https://www.carwale.com/brand/model/" style="font-size:14px;padding:10px 14px">
+        <button class="btn btn-sm btn-outline-danger" onclick="removeUrlField(this)" title="Remove"><i class="fas fa-times"></i></button>
+    `;
+    container.appendChild(row);
+}
+
+function removeUrlField(btn) {
+    const rows = document.querySelectorAll('.url-field-row');
+    if (rows.length > 1) {
+        btn.closest('.url-field-row').remove();
+        reindexUrlFields();
+    }
+}
+
+function reindexUrlFields() {
+    document.querySelectorAll('.url-field-row').forEach((row, i) => {
+        row.querySelector('.badge').textContent = i + 1;
+    });
+    urlCounter = document.querySelectorAll('.url-field-row').length;
+}
+
+function getUrls() {
+    return Array.from(document.querySelectorAll('.import-url-input'))
+        .map(input => input.value.trim())
+        .filter(url => url.length > 0);
+}
+
+function quickAddAllSources() {
+    const model = document.getElementById('quickModelInput').value.trim();
+    if (!model) { showAlert('danger', 'Enter a model path like tata/punch or hyundai/creta'); return; }
+
+    const parts = model.split('/');
+    const brand = parts[0] || '';
+    const modelName = parts[1] || '';
+
+    const sources = [
+        `https://www.cardekho.com/${brand}/${modelName}`,
+        `https://www.carwale.com/${brand}-cars/${modelName}/`,
+        `https://www.v3cars.com/${brand}-cars/${modelName}`,
+        `https://www.carandbike.com/${brand}-cars/${modelName}`,
+        `https://www.cartrade.com/${brand}-cars/${modelName}/`,
+        `https://www.cars24.com/new-cars/${brand}/${modelName}/`
+    ];
+
+    // Clear existing and add all sources
+    document.getElementById('urlFields').innerHTML = '';
+    urlCounter = 0;
+    sources.forEach(url => {
+        urlCounter++;
+        const container = document.getElementById('urlFields');
+        const row = document.createElement('div');
+        row.className = 'url-field-row d-flex gap-2 mb-2 align-items-center';
+        row.innerHTML = `
+            <span class="badge bg-secondary" style="width:24px;text-align:center">${urlCounter}</span>
+            <input type="url" class="form-control import-url-input" value="${url}" style="font-size:14px;padding:10px 14px">
+            <button class="btn btn-sm btn-outline-danger" onclick="removeUrlField(this)" title="Remove"><i class="fas fa-times"></i></button>
+        `;
+        container.appendChild(row);
+    });
+
+    showAlert('success', `Added ${sources.length} source URLs for ${brand}/${modelName}. Click "Fetch & Merge All" to import.`);
+}
+
+// ─── Fetch Functions ─────────────────────────────
+
+async function fetchSingleUrl() {
+    const urls = getUrls();
+    if (urls.length === 0) { showAlert('danger', 'Please enter at least one URL'); return; }
+
+    document.getElementById('spinnerOverlay').classList.add('active');
+    document.getElementById('fetchBtn').disabled = true;
+
+    try {
+        const resp = await fetch('/api/admin/vehicles/import/fetch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: urls[0] })
+        });
+
+        const result = await resp.json();
+        if (!resp.ok || result.error) {
+            showAlert('danger', result.error || 'Failed to fetch data');
+            return;
+        }
+
+        importedData = result.data;
+        deduplicateImportedData(); // Remove duplicates before preview
+        populatePreview(importedData);
+        document.getElementById('previewSection').classList.add('active');
+        showAlert('success', 'Vehicle data imported from 1 URL! Review and edit below.');
+
+    } catch (e) {
+        showAlert('danger', 'Network error: ' + e.message);
+    } finally {
+        document.getElementById('spinnerOverlay').classList.remove('active');
+        document.getElementById('fetchBtn').disabled = false;
+    }
+}
+
+async function fetchMultipleUrls() {
+    const urls = getUrls();
+    if (urls.length === 0) { showAlert('danger', 'Please enter at least one URL'); return; }
+
+    document.getElementById('spinnerOverlay').classList.add('active');
+    document.getElementById('fetchBtn').disabled = true;
+
+    // Update spinner message
+    document.querySelector('#spinnerOverlay h5').textContent = `Fetching from ${urls.length} source(s)...`;
+    document.querySelector('#spinnerOverlay p').textContent = 'Extracting and merging data from multiple websites';
+
+    try {
+        const resp = await fetch('/api/admin/vehicles/import/fetch-multi', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ urls: urls })
+        });
+
+        const result = await resp.json();
+        if (!resp.ok || result.error) {
+            showAlert('danger', result.error || 'Failed to fetch data from all URLs');
+            if (result.results) {
+                let details = '<br><small><strong>Details:</strong><ul>';
+                result.results.forEach(r => {
+                    const icon = r.status === 'success' ? '✅' : '❌';
+                    details += `<li>${icon} ${r.url} — ${r.status === 'success' ? 'OK' : r.error}</li>`;
+                });
+                details += '</ul></small>';
+                showAlert('danger', (result.error || 'Partial failure') + details);
+            }
+            return;
+        }
+
+        importedData = result.data;
+        deduplicateImportedData(); // Remove duplicates before preview
+        populatePreview(importedData);
+        document.getElementById('previewSection').classList.add('active');
+
+        // Show source results
+        let resultHtml = result.message + '<br><small><ul style="margin:6px 0 0;padding-left:20px">';
+        if (result.results) {
+            result.results.forEach(r => {
+                const icon = r.status === 'success' ? '✅' : '❌';
+                const domain = r.url.replace(/https?:\/\//, '').split('/')[0];
+                resultHtml += `<li>${icon} ${domain} — ${r.status === 'success' ? 'Data extracted' : r.error}</li>`;
+            });
+        }
+        resultHtml += '</ul></small>';
+        showAlert('success', resultHtml);
+
+    } catch (e) {
+        showAlert('danger', 'Network error: ' + e.message);
+    } finally {
+        document.getElementById('spinnerOverlay').classList.remove('active');
+        document.getElementById('fetchBtn').disabled = false;
+        document.querySelector('#spinnerOverlay h5').textContent = 'Fetching vehicle data...';
+        document.querySelector('#spinnerOverlay p').textContent = 'Extracting information from the page';
+    }
+}
+
+// Keep backward compat
+async function fetchVehicleData() { await fetchMultipleUrls(); }
+
+function populatePreview(d) {
+    document.getElementById('pName').value = d.name || '';
+    document.getElementById('pBrand').value = d.brand || '';
+    document.getElementById('pModel').value = d.model || '';
+    document.getElementById('pCategory').value = d.category || 'SUV';
+    document.getElementById('pFuel').value = d.fuelType || '';
+    document.getElementById('pTransmission').value = d.transmissionType || '';
+    document.getElementById('pPrice').value = d.startingPrice || '';
+    document.getElementById('pMaxPrice').value = d.maxPrice || '';
+    document.getElementById('pSeating').value = d.seatingCapacity || '';
+    document.getElementById('pMileage').value = d.mileage || '';
+    document.getElementById('pShortDesc').value = d.shortDescription || '';
+    document.getElementById('pFullDesc').value = d.fullDescription || '';
+
+    // Specs
+    if (d.specifications && d.specifications.length > 0) {
+        document.getElementById('specsCard').style.display = 'block';
+        document.getElementById('specCount').textContent = d.specifications.length;
+        document.getElementById('specsList').innerHTML = d.specifications.map(s =>
+            `<div class="spec-preview"><strong>${s.name}</strong>: ${s.value}</div>`
+        ).join('');
+    }
+
+    // Variants
+    if (d.variants && d.variants.length > 0) {
+        document.getElementById('variantsCard').style.display = 'block';
+        document.getElementById('variantCount').textContent = d.variants.length;
+        let vHtml = '<div class="table-responsive"><table class="table table-sm table-bordered"><thead><tr><th>Variant</th><th>Price</th><th>Fuel</th><th>Transmission</th></tr></thead><tbody>';
+        d.variants.forEach(v => {
+            const price = v.price ? '₹ ' + Number(v.price).toLocaleString('en-IN') : '-';
+            vHtml += `<tr><td class="fw-500">${v.variantName}</td><td>${price}</td><td>${v.fuelType || '-'}</td><td>${v.transmission || '-'}</td></tr>`;
+        });
+        vHtml += '</tbody></table></div>';
+        document.getElementById('variantsList').innerHTML = vHtml;
+    }
+
+    // Features
+    if (d.features && d.features.length > 0) {
+        document.getElementById('featuresCard').style.display = 'block';
+        document.getElementById('featureCount').textContent = d.features.length;
+        document.getElementById('featuresList').innerHTML = d.features.map(f =>
+            `<span class="feature-tag"><i class="fas fa-check text-success me-1"></i>${f}</span>`
+        ).join('');
+    }
+
+    // FAQs
+    if (d.faqs && d.faqs.length > 0) {
+        document.getElementById('faqsCard').style.display = 'block';
+        document.getElementById('faqCount').textContent = d.faqs.length;
+        document.getElementById('faqsList').innerHTML = d.faqs.map(f =>
+            `<div class="mb-2"><strong style="font-size:13px">${f.question}</strong><br><span style="font-size:12px;color:#6b7280">${f.answer}</span></div>`
+        ).join('');
+    }
+
+    // Expert Reviews
+    if (d.expertReviews && d.expertReviews.length > 0) {
+        document.getElementById('expertReviewsCard').style.display = 'block';
+        document.getElementById('expertReviewCount').textContent = d.expertReviews.length;
+        document.getElementById('expertReviewsList').innerHTML = d.expertReviews.map(r =>
+            `<div class="mb-2 p-2" style="background:#f9fafb;border-radius:6px"><strong style="font-size:13px">${r.title || 'Expert Review'}</strong><br><span style="font-size:12px;color:#6b7280">${(r.content || '').substring(0,120)}...</span></div>`
+        ).join('');
+    }
+
+    // User Reviews
+    if (d.userReviews && d.userReviews.length > 0) {
+        document.getElementById('userReviewsCard').style.display = 'block';
+        document.getElementById('userReviewCount').textContent = d.userReviews.length;
+        document.getElementById('userReviewsList').innerHTML = d.userReviews.map(r =>
+            `<div class="mb-2"><strong style="font-size:13px">${r.title || ''}</strong> ${r.rating ? '⭐'.repeat(r.rating) : ''}<br><span style="font-size:12px;color:#6b7280">${(r.content || '').substring(0,100)}...</span></div>`
+        ).join('');
+    }
+
+    // News
+    if (d.news && d.news.length > 0) {
+        document.getElementById('newsCard').style.display = 'block';
+        document.getElementById('newsCount').textContent = d.news.length;
+        document.getElementById('newsList').innerHTML = d.news.map(n =>
+            `<div class="mb-2"><strong style="font-size:13px">${n.title}</strong><br><span style="font-size:11px;color:#6b7280">${n.sourceName || ''} • ${n.category || 'news'}</span></div>`
+        ).join('');
+    }
+
+    // Pros & Cons
+    if (d.pros || d.cons) {
+        document.getElementById('prosConsCard').style.display = 'block';
+        let pcHtml = '';
+        if (d.pros) pcHtml += `<div class="mb-2"><span style="color:#059669;font-weight:600;font-size:12px">👍 Pros:</span> <span style="font-size:12px">${d.pros}</span></div>`;
+        if (d.cons) pcHtml += `<div><span style="color:#dc2626;font-weight:600;font-size:12px">👎 Cons:</span> <span style="font-size:12px">${d.cons}</span></div>`;
+        document.getElementById('prosConsList').innerHTML = pcHtml;
+    }
+
+    // Images
+    if (d.images && d.images.length > 0) {
+        document.getElementById('imagesCard').style.display = 'block';
+        document.getElementById('imageCount').textContent = d.images.length;
+        document.getElementById('imagesList').innerHTML = d.images.map(img =>
+            `<img src="${img.url}" class="preview-img" onerror="this.style.display='none'">`
+        ).join('');
+    }
+
+    // Colors
+    if (d.colors && d.colors.length > 0) {
+        document.getElementById('colorsCard').style.display = 'block';
+        document.getElementById('colorCount').textContent = d.colors.length;
+        document.getElementById('colorsList').innerHTML = d.colors.map(c =>
+            `<div class="text-center"><div style="width:32px;height:32px;border-radius:50%;background:${c.code || '#ccc'};border:2px solid #e8ecf0;margin:0 auto 3px"></div><div style="font-size:10px">${c.name}</div></div>`
+        ).join('');
+    }
+}
+
+// ─── Image Category Detection ───────────────────
+function detectImageCategory(img) {
+    const url = (img.url || '').toLowerCase();
+    const alt = (img.alt || '').toLowerCase();
+    const combined = url + ' ' + alt;
+    if (combined.includes('exterior') || combined.includes('front') || combined.includes('rear') || combined.includes('side')) return 'exterior';
+    if (combined.includes('interior') || combined.includes('dashboard') || combined.includes('seat') || combined.includes('cabin')) return 'interior';
+    if (combined.includes('logo') || combined.includes('brand') || combined.includes('emblem')) return 'logo';
+    return 'gallery';
+}
+
+// ─── Deduplication Logic ─────────────────────────
+// Removes duplicate entries from importedData before saving to database
+function deduplicateImportedData() {
+    if (!importedData) return;
+
+    // Deduplicate specifications by name (case-insensitive)
+    if (importedData.specifications && importedData.specifications.length > 0) {
+        const seen = new Set();
+        importedData.specifications = importedData.specifications.filter(s => {
+            const key = s.name.toLowerCase().trim();
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }
+
+    // Deduplicate features (case-insensitive, trim)
+    if (importedData.features && importedData.features.length > 0) {
+        const seen = new Set();
+        importedData.features = importedData.features.filter(f => {
+            const key = f.toLowerCase().trim();
+            if (seen.has(key) || key.length < 3) return false;
+            seen.add(key);
+            return true;
+        });
+    }
+
+    // Deduplicate variants by name (case-insensitive)
+    if (importedData.variants && importedData.variants.length > 0) {
+        const seen = new Set();
+        importedData.variants = importedData.variants.filter(v => {
+            const key = v.variantName.toLowerCase().trim();
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }
+
+    // Deduplicate colors by name (case-insensitive)
+    if (importedData.colors && importedData.colors.length > 0) {
+        const seen = new Set();
+        importedData.colors = importedData.colors.filter(c => {
+            const key = c.name.toLowerCase().trim();
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }
+
+    // Deduplicate images by URL
+    if (importedData.images && importedData.images.length > 0) {
+        const seen = new Set();
+        importedData.images = importedData.images.filter(img => {
+            const key = img.url.toLowerCase().trim();
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }
+
+    // Deduplicate FAQs by question text (case-insensitive, first 80 chars)
+    if (importedData.faqs && importedData.faqs.length > 0) {
+        const seen = new Set();
+        importedData.faqs = importedData.faqs.filter(f => {
+            const key = f.question.toLowerCase().trim().substring(0, 80);
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }
+
+    // Deduplicate expert reviews by title (case-insensitive)
+    if (importedData.expertReviews && importedData.expertReviews.length > 0) {
+        const seen = new Set();
+        importedData.expertReviews = importedData.expertReviews.filter(r => {
+            const key = (r.title || '').toLowerCase().trim().substring(0, 60);
+            if (key.length < 3) return false;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }
+
+    // Deduplicate user reviews by title+reviewer (case-insensitive)
+    if (importedData.userReviews && importedData.userReviews.length > 0) {
+        const seen = new Set();
+        importedData.userReviews = importedData.userReviews.filter(r => {
+            const key = ((r.title || '') + '|' + (r.reviewerName || '')).toLowerCase().trim();
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }
+
+    // Deduplicate news by title (case-insensitive, first 80 chars)
+    if (importedData.news && importedData.news.length > 0) {
+        const seen = new Set();
+        importedData.news = importedData.news.filter(n => {
+            const key = n.title.toLowerCase().trim().substring(0, 80);
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }
+
+    console.log('Deduplication complete:', {
+        specs: importedData.specifications?.length || 0,
+        features: importedData.features?.length || 0,
+        variants: importedData.variants?.length || 0,
+        colors: importedData.colors?.length || 0,
+        images: importedData.images?.length || 0,
+        faqs: importedData.faqs?.length || 0,
+        expertReviews: importedData.expertReviews?.length || 0,
+        userReviews: importedData.userReviews?.length || 0,
+        news: importedData.news?.length || 0
+    });
+}
+
+async function saveVehicle() {
+    const name = document.getElementById('pName').value.trim();
+    if (!name) { showAlert('danger', 'Vehicle name is required'); return; }
+
+    document.getElementById('saveBtn').disabled = true;
+    document.getElementById('saveBtn').innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving (deduplicating)...';
+
+    // ─── Deduplicate all data before saving ──────────
+    deduplicateImportedData();
+
+    try {
+        // 1. Create vehicle
+        const vehicle = {
+            name: name,
+            brand: document.getElementById('pBrand').value,
+            model: document.getElementById('pModel').value,
+            category: document.getElementById('pCategory').value,
+            fuelType: document.getElementById('pFuel').value,
+            transmissionType: document.getElementById('pTransmission').value,
+            startingPrice: document.getElementById('pPrice').value || null,
+            maxPrice: document.getElementById('pMaxPrice').value || null,
+            seatingCapacity: document.getElementById('pSeating').value || null,
+            shortDescription: document.getElementById('pShortDesc').value,
+            fullDescription: document.getElementById('pFullDesc').value,
+            heroImage: importedData.heroImage || null
+        };
+
+        const vResp = await fetch('/api/vehicles', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(vehicle)
+        });
+        const vResult = await vResp.json();
+        if (!vResp.ok) { showAlert('danger', vResult.error || 'Failed to save vehicle'); return; }
+
+        const vehicleId = vResult.data.id;
+
+        // 2. Save specs (already deduplicated)
+        if (importedData.specifications) {
+            for (const s of importedData.specifications) {
+                await fetch(`/api/vehicles/${vehicleId}/specifications`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ specName: s.name, specValue: s.value, category: s.category || 'General', displayOrder: 0 })
+                });
+            }
+        }
+
+        // 3. Save features (already deduplicated)
+        if (importedData.features) {
+            for (const f of importedData.features) {
+                await fetch(`/api/vehicles/${vehicleId}/features`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ featureName: f, category: 'General', isAvailable: true })
+                });
+            }
+        }
+
+        // 3b. Save variants (already deduplicated)
+        if (importedData.variants) {
+            for (const v of importedData.variants) {
+                await fetch(`/api/vehicles/${vehicleId}/variants`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        variantName: v.variantName,
+                        price: v.price || null,
+                        fuelType: v.fuelType || document.getElementById('pFuel').value || null,
+                        transmission: v.transmission || document.getElementById('pTransmission').value || null,
+                        engineCC: v.engineCC || null,
+                        mileage: v.mileage || null
+                    })
+                });
+            }
+        }
+
+        // 4. Save colors (already deduplicated)
+        if (importedData.colors) {
+            for (const c of importedData.colors) {
+                await fetch(`/api/vehicles/${vehicleId}/colors`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ colorName: c.name, colorCode: c.code, displayOrder: 0 })
+                });
+            }
+        }
+
+        // 5. Save images (already deduplicated)
+        if (importedData.images) {
+            for (let i = 0; i < Math.min(importedData.images.length, 20); i++) {
+                await fetch(`/api/vehicles/${vehicleId}/images`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ imageUrl: importedData.images[i].url, altText: importedData.images[i].alt || name, category: detectImageCategory(importedData.images[i]), displayOrder: i })
+                });
+            }
+        }
+
+        // 6. Save FAQs (already deduplicated)
+        if (importedData.faqs) {
+            for (let i = 0; i < importedData.faqs.length; i++) {
+                await fetch(`/api/vehicles/${vehicleId}/faqs`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: importedData.faqs[i].question, answer: importedData.faqs[i].answer, displayOrder: i })
+                });
+            }
+        }
+
+        // 7. Save Expert Reviews (already deduplicated)
+        if (importedData.expertReviews) {
+            for (let i = 0; i < importedData.expertReviews.length; i++) {
+                const er = importedData.expertReviews[i];
+                await fetch(`/api/vehicles/${vehicleId}/expert-reviews`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: er.title || 'Expert Review',
+                        reviewContent: er.content || '',
+                        reviewerName: er.reviewerName || null,
+                        sourceName: er.sourceName || null,
+                        sourceUrl: er.sourceUrl || null,
+                        rating: er.rating || null,
+                        pros: er.pros || importedData.pros || null,
+                        cons: er.cons || importedData.cons || null,
+                        verdict: er.verdict || null,
+                        displayOrder: i
+                    })
+                });
+            }
+        }
+
+        // 8. Save User Reviews (already deduplicated)
+        if (importedData.userReviews) {
+            for (const ur of importedData.userReviews) {
+                await fetch(`/api/vehicles/${vehicleId}/reviews`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: ur.title || 'User Review',
+                        reviewContent: ur.content || '',
+                        reviewerName: ur.reviewerName || 'Anonymous',
+                        rating: ur.rating || 4,
+                        pros: ur.pros || null,
+                        cons: ur.cons || null
+                    })
+                });
+            }
+        }
+
+        // 9. Save News & Updates (already deduplicated)
+        if (importedData.news) {
+            for (let i = 0; i < importedData.news.length; i++) {
+                const n = importedData.news[i];
+                await fetch(`/api/vehicles/${vehicleId}/news`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: n.title,
+                        content: n.content || null,
+                        imageUrl: n.imageUrl || null,
+                        sourceName: n.sourceName || null,
+                        sourceUrl: n.sourceUrl || null,
+                        category: n.category || 'news',
+                        displayOrder: i
+                    })
+                });
+            }
+        }
+
+        showAlert('success', `Vehicle "${name}" imported successfully! <a href="/admin/vehicles/manage/${vehicleId}">Manage it →</a>`);
+        document.getElementById('previewSection').classList.remove('active');
+        clearImport();
+
+    } catch (e) {
+        showAlert('danger', 'Error saving: ' + e.message);
+    } finally {
+        document.getElementById('saveBtn').disabled = false;
+        document.getElementById('saveBtn').innerHTML = '<i class="fas fa-save me-1"></i>Save as New Vehicle';
+    }
+}
+
+function clearImport() {
+    importedData = null;
+    document.getElementById('previewSection').classList.remove('active');
+    document.getElementById('alertBox').style.display = 'none';
+    // Reset URL fields to single empty
+    document.getElementById('urlFields').innerHTML = `
+        <div class="url-field-row d-flex gap-2 mb-2 align-items-center">
+            <span class="badge bg-secondary" style="width:24px;text-align:center">1</span>
+            <input type="url" class="form-control import-url-input" placeholder="https://www.cardekho.com/tata/punch" style="font-size:14px;padding:10px 14px">
+            <button class="btn btn-sm btn-outline-danger" onclick="removeUrlField(this)" title="Remove"><i class="fas fa-times"></i></button>
+        </div>`;
+    urlCounter = 1;
+}
+
+function showAlert(type, msg) {
+    const box = document.getElementById('alertBox');
+    box.style.display = 'block';
+    box.innerHTML = `<div class="alert alert-${type} alert-dismissible"><i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+}
+</script>
+</body>
+</html>

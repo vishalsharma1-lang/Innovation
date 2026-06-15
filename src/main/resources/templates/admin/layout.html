@@ -1,0 +1,260 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:fragment="layout(title, content)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:replace="${title}">CMS Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --primary: #FF6B00;
+            --primary-dark: #E05E00;
+            --bg-dark: #111827;
+            --bg-darker: #0F172A;
+            --sidebar-text: rgba(255,255,255,0.75);
+            --sidebar-hover: rgba(255,255,255,0.1);
+        }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-darker) 100%);
+            height: 100vh;
+            position: fixed;
+            left: 0; top: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        .sidebar-brand {
+            padding: 24px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .sidebar-brand .brand-icon {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, #FF6B00, #FF8C38);
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            margin-right: 10px;
+        }
+        .sidebar-brand span { color: white; font-weight: 700; font-size: 17px; }
+        .sidebar-brand small { display: block; color: rgba(255,255,255,0.4); font-size: 11px; margin-top: 2px; }
+        .sidebar-nav { flex: 1; padding: 16px 0; }
+        .nav-section-title {
+            color: rgba(255,255,255,0.3);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 12px 20px 6px;
+        }
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            padding: 11px 20px;
+            color: var(--sidebar-text);
+            text-decoration: none;
+            border-radius: 0;
+            transition: all .2s;
+            font-size: 14px;
+            gap: 12px;
+            margin: 2px 8px;
+            border-radius: 8px;
+        }
+        .sidebar a i { width: 18px; text-align: center; font-size: 15px; }
+        .sidebar a:hover { background: var(--sidebar-hover); color: white; }
+        .sidebar a.active { background: linear-gradient(135deg, rgba(102,126,234,0.3), rgba(118,75,162,0.2)); color: white; border-left: 3px solid var(--primary); margin-left: 5px; padding-left: 17px; }
+        .sidebar-footer {
+            padding: 16px 20px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .sidebar-footer a {
+            color: rgba(255,255,255,0.5);
+            text-decoration: none;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sidebar-footer a:hover { color: white; }
+
+        /* Main content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .topbar {
+            background: white;
+            border-bottom: 1px solid #e8ecf0;
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .page-title { font-size: 18px; font-weight: 600; color: #1a1a2e; margin: 0; }
+        .topbar-right { display: flex; align-items: center; gap: 16px; }
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 6px 14px;
+        }
+        .user-avatar {
+            width: 32px; height: 32px;
+            background: linear-gradient(135deg, #FF6B00, #FF8C38);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .content-area { flex: 1; padding: 24px; }
+
+        /* Cards */
+        .card { border: none; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .card-header { background: white; border-bottom: 1px solid #f0f2f5; padding: 16px 20px; border-radius: 12px 12px 0 0; }
+        .stat-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+
+        /* Tables */
+        .table { margin: 0; }
+        .table thead th { background: #f8f9fa; font-size: 12px; font-weight: 600; color: #6c757d; text-transform: uppercase; letter-spacing: .5px; border: none; padding: 12px 16px; }
+        .table td { padding: 12px 16px; vertical-align: middle; font-size: 14px; border-color: #f0f2f5; }
+        .table tbody tr:hover { background: #fafbfc; }
+
+        /* Badges / Pills */
+        .badge-active { background: #d1fae5; color: #065f46; font-weight: 500; }
+        .badge-inactive { background: #fee2e2; color: #991b1b; font-weight: 500; }
+
+        /* Alerts */
+        .alert { border: none; border-radius: 10px; font-size: 14px; }
+        .alert-success { background: #d1fae5; color: #065f46; }
+        .alert-danger { background: #fee2e2; color: #991b1b; }
+
+        /* Buttons */
+        .btn { border-radius: 8px; font-size: 13px; font-weight: 500; }
+        .btn-primary { background: linear-gradient(135deg, #FF6B00, #FF8C38); border: none; }
+        .btn-primary:hover { background: linear-gradient(135deg, #E05E00, #FF6B00); border: none; }
+        .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+        /* Image preview */
+        .img-thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 8px; border: 2px solid #f0f2f5; }
+
+        /* Pagination */
+        .pagination .page-link { border-radius: 8px !important; margin: 0 2px; border: 1px solid #e8ecf0; color: #FF6B00; }
+        .pagination .page-item.active .page-link { background: linear-gradient(135deg, #FF6B00, #FF8C38); border-color: transparent; }
+
+        /* Form controls */
+        .form-control, .form-select { border-radius: 8px; border-color: #e8ecf0; font-size: 14px; }
+        .form-control:focus, .form-select:focus { border-color: #FF6B00; box-shadow: 0 0 0 3px rgba(255,107,0,0.15); }
+        .form-label { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+
+        /* Image upload preview */
+        #imagePreview { max-width: 200px; max-height: 200px; object-fit: contain; border-radius: 10px; display: none; margin-top: 12px; border: 2px solid #e8ecf0; }
+    </style>
+</head>
+<body>
+<!-- Sidebar -->
+<nav class="sidebar">
+    <div class="sidebar-brand">
+        <div style="display:flex;align-items:center">
+            <div class="brand-icon"><i class="fas fa-bolt"></i></div>
+            <div>
+                <span>CarDekho</span>
+                <small>Admin Panel</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="sidebar-nav">
+        <div class="nav-section-title">Main</div>
+        <a th:href="@{/admin/dashboard}" th:classappend="${#httpServletRequest.requestURI.contains('/dashboard') ? 'active' : ''}">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+        </a>
+
+        <div class="nav-section-title">Management</div>
+        <a th:href="@{/admin/seo}" th:classappend="${#httpServletRequest.requestURI.contains('/seo') ? 'active' : ''}">
+            <i class="fas fa-search"></i> SEO Management
+        </a>
+        <a th:href="@{/admin/banners}" th:classappend="${#httpServletRequest.requestURI.contains('/banners') ? 'active' : ''}">
+            <i class="fas fa-images"></i> Banner Management
+        </a>
+        <a th:href="@{/admin/content}" th:classappend="${#httpServletRequest.requestURI.contains('/content') ? 'active' : ''}">
+            <i class="fas fa-file-alt"></i> Content Management
+        </a>
+        <a th:href="@{/admin/images}" th:classappend="${#httpServletRequest.requestURI.contains('/images') ? 'active' : ''}">
+            <i class="fas fa-photo-video"></i> Image Management
+        </a>
+
+        <div class="nav-section-title">System</div>
+        <a th:href="@{/admin/settings}" th:classappend="${#httpServletRequest.requestURI.contains('/settings') ? 'active' : ''}">
+            <i class="fas fa-cog"></i> Settings
+        </a>
+        <a th:href="@{/}" target="_blank">
+            <i class="fas fa-external-link-alt"></i> View Website
+        </a>
+    </div>
+
+    <div class="sidebar-footer">
+        <a th:href="@{/admin/logout}">
+            <i class="fas fa-sign-out-alt"></i> Sign Out
+        </a>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<div class="main-content">
+    <div class="topbar">
+        <h1 class="page-title" th:replace="${title}">Dashboard</h1>
+        <div class="topbar-right">
+            <a href="/" target="_blank" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-globe me-1"></i>View Site
+            </a>
+            <div class="user-badge">
+                <div class="user-avatar">
+                    <span sec:authentication="name" th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}">A</span>
+                </div>
+                <span style="font-size:13px;color:#374151;font-weight:500" sec:authentication="name">Admin</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-area">
+        <div th:replace="${content}"></div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Auto-dismiss alerts after 5 seconds
+    setTimeout(() => {
+        document.querySelectorAll('.alert:not(.alert-permanent)').forEach(el => {
+            el.style.transition = 'opacity .5s';
+            el.style.opacity = '0';
+            setTimeout(() => el.remove(), 500);
+        });
+    }, 5000);
+</script>
+</body>
+</html>

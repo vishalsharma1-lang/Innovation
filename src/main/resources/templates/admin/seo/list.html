@@ -1,0 +1,124 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Management — CarDekho</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/admin.css}" rel="stylesheet">
+</head>
+<body>
+<div th:replace="~{admin/fragments/sidebar :: sidebar}"></div>
+<div class="main-content">
+    <div th:replace="~{admin/fragments/sidebar :: topbar('SEO Management')}"></div>
+    <div class="content-area">
+
+        <div th:if="${success}" class="alert alert-success alert-dismissible mb-4">
+            <i class="fas fa-check-circle me-2"></i><span th:text="${success}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${error}" class="alert alert-danger alert-dismissible mb-4">
+            <i class="fas fa-exclamation-circle me-2"></i><span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div class="card">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <h6 class="mb-0 fw-600">SEO Settings</h6>
+                <div class="d-flex gap-2">
+                    <form th:action="@{/admin/seo}" method="get" class="d-flex gap-2">
+                        <input type="text" name="search" class="form-control form-control-sm"
+                               placeholder="Search pages..." th:value="${search}" style="width:200px">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </form>
+                    <a th:href="@{/admin/seo/new}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i>Add SEO
+                    </a>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Page Name</th>
+                        <th>SEO Title</th>
+                        <th>Meta Description</th>
+                        <th>Robots</th>
+                        <th>Updated</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="seo, stat : ${seoPage.content}">
+                        <td th:text="${stat.index + 1 + seoPage.number * seoPage.size}"></td>
+                        <td>
+                            <span class="badge bg-primary bg-opacity-10 text-primary" th:text="${seo.pageName}"></span>
+                        </td>
+                        <td th:text="${#strings.abbreviate(seo.seoTitle != null ? seo.seoTitle : '-', 40)}"></td>
+                        <td style="max-width:200px">
+                            <span class="text-muted" style="font-size:13px"
+                                  th:text="${#strings.abbreviate(seo.metaDescription != null ? seo.metaDescription : '-', 60)}"></span>
+                        </td>
+                        <td><span class="badge bg-light text-dark" th:text="${seo.robots}"></span></td>
+                        <td style="font-size:12px;color:#6c757d"
+                            th:text="${seo.updatedAt != null ? #temporals.format(seo.updatedAt,'MMM dd, yyyy') : '-'}"></td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a th:href="@{/admin/seo/edit/{id}(id=${seo.id})}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form th:action="@{/admin/seo/delete/{id}(id=${seo.id})}" method="post"
+                                      onsubmit="return confirm('Delete this SEO record?')">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${seoPage.totalElements == 0}">
+                        <td colspan="7" class="text-center text-muted py-4">
+                            <i class="fas fa-search fa-2x mb-2 d-block"></i>
+                            No SEO records found. <a th:href="@{/admin/seo/new}">Add one now.</a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="card-footer d-flex align-items-center justify-content-between" th:if="${seoPage.totalPages > 1}">
+                <span class="text-muted" style="font-size:13px">
+                    Showing <strong th:text="${seoPage.number * seoPage.size + 1}"></strong>–
+                    <strong th:text="${seoPage.number * seoPage.size + seoPage.size > seoPage.totalElements ? seoPage.totalElements : seoPage.number * seoPage.size + seoPage.size}"></strong>
+                    of <strong th:text="${seoPage.totalElements}"></strong>
+                </span>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item" th:classappend="${seoPage.first ? 'disabled' : ''}">
+                            <a class="page-link" th:href="@{/admin/seo(page=${seoPage.number - 1}, search=${search})}">‹</a>
+                        </li>
+                        <li class="page-item" th:each="i : ${#numbers.sequence(0, seoPage.totalPages - 1)}"
+                            th:classappend="${i == seoPage.number ? 'active' : ''}">
+                            <a class="page-link" th:href="@{/admin/seo(page=${i}, search=${search})}" th:text="${i + 1}"></a>
+                        </li>
+                        <li class="page-item" th:classappend="${seoPage.last ? 'disabled' : ''}">
+                            <a class="page-link" th:href="@{/admin/seo(page=${seoPage.number + 1}, search=${search})}">›</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/admin.js}"></script>
+</body>
+</html>

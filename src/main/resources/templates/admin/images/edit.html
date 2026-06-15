@@ -1,0 +1,110 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Image — CarDekho</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/admin.css}" rel="stylesheet">
+</head>
+<body>
+<div th:replace="~{admin/fragments/sidebar :: sidebar}"></div>
+<div class="main-content">
+    <div th:replace="~{admin/fragments/sidebar :: topbar('Edit Image')}"></div>
+    <div class="content-area">
+        <div class="row justify-content-center">
+            <div class="col-lg-7">
+                <div class="card mb-4">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <h6 class="mb-0 fw-600">Current Image</h6>
+                        <a th:href="@{/admin/images}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Back
+                        </a>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="text-center mb-4">
+                            <img th:src="${image.imageUrl}" th:alt="${image.altText}"
+                                 style="max-width:100%;max-height:300px;border-radius:12px;border:2px solid #e8ecf0">
+                            <div class="mt-2 text-muted" style="font-size:13px">
+                                <span th:text="${image.originalName != null ? image.originalName : image.imageName}"></span>
+                                <span th:if="${image.fileSize != null}">
+                                    · <span th:text="${#numbers.formatDecimal(image.fileSize / 1024.0, 1, 1)}"></span> KB
+                                </span>
+                            </div>
+                            <div class="mt-1">
+                                <code style="font-size:12px;background:#f8f9fa;padding:4px 8px;border-radius:6px"
+                                      th:text="${image.imageUrl}"></code>
+                            </div>
+                        </div>
+
+                        <!-- Update details -->
+                        <form th:action="@{/admin/images/update/{id}(id=${image.id})}" method="post" class="mb-4">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                            <div class="row g-3">
+                                <div class="col-md-8">
+                                    <label class="form-label">Alt Text</label>
+                                    <input type="text" name="altText" class="form-control"
+                                           th:value="${image.altText}" placeholder="Image description">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Category</label>
+                                    <select name="category" class="form-select">
+                                        <option th:each="cat : ${ {'general','banner','hero','about','services','team','portfolio','blog','logo'} }"
+                                                th:value="${cat}" th:text="${cat}"
+                                                th:selected="${cat == image.category}">
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-outline-primary btn-sm mt-3">
+                                <i class="fas fa-save me-1"></i>Update Details
+                            </button>
+                        </form>
+
+                        <hr>
+
+                        <!-- Replace image -->
+                        <h6 class="fw-600 mb-3">Replace Image File</h6>
+                        <form th:action="@{/admin/images/replace/{id}(id=${image.id})}" method="post"
+                              enctype="multipart/form-data">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                            <div class="mb-3">
+                                <label class="form-label">New Image File</label>
+                                <input type="file" name="file" class="form-control" accept="image/*"
+                                       onchange="previewReplacement(this)">
+                            </div>
+                            <div class="text-center mb-3">
+                                <img id="replacementPreview" src="" alt="New preview"
+                                     style="max-width:200px;max-height:150px;border-radius:10px;display:none;border:2px solid #e8ecf0">
+                            </div>
+                            <button type="submit" class="btn btn-warning btn-sm">
+                                <i class="fas fa-sync me-1"></i>Replace Image
+                            </button>
+                            <p class="text-muted mt-2 mb-0" style="font-size:12px">
+                                ⚠ This will permanently replace the current file and update all references.
+                            </p>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/admin.js}"></script>
+<script>
+    function previewReplacement(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        const preview = document.getElementById('replacementPreview');
+        reader.onload = e => {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+</script>
+</body>
+</html>

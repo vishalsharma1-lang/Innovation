@@ -1,0 +1,711 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${isNew ? 'Add Vehicle' : 'Edit Vehicle'} + ' — CarDekho'">Vehicle Form</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/admin.css}" rel="stylesheet">
+</head>
+<body>
+<div th:replace="~{admin/fragments/sidebar :: sidebar}"></div>
+<div class="main-content">
+    <div th:replace="~{admin/fragments/sidebar :: topbar(${isNew ? 'Add Vehicle' : 'Edit Vehicle'})}"></div>
+    <div class="content-area">
+        <div class="row justify-content-center">
+            <div class="col-lg-9">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <h6 class="mb-0 fw-600" th:text="${isNew ? 'Add New Vehicle' : 'Edit Vehicle'}"></h6>
+                        <div class="d-flex gap-2">
+                            <button type="submit" form="vehicleForm" class="btn btn-primary btn-sm">
+                                <i class="fas fa-save me-1"></i>Save Vehicle
+                            </button>
+                            <a th:href="@{/admin/vehicles}" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Back
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <form id="vehicleForm" th:action="@{/admin/vehicles/save}" method="post" th:object="${vehicle}">
+                            <input type="hidden" th:field="*{id}">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+                            <div class="row g-3">
+                                <!-- Vehicle Type Selector -->
+                                <div class="col-12">
+                                    <label class="form-label fw-600">Vehicle Type <span class="text-danger">*</span></label>
+                                    <div class="d-flex gap-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="vehicleType" id="typeNew" value="NEW"
+                                                   th:checked="${vehicle.vehicleType == null or vehicle.vehicleType == 'NEW'}"
+                                                   onchange="toggleUsedCarFields(this.value)">
+                                            <label class="form-check-label" for="typeNew">
+                                                <i class="fas fa-car me-1" style="color:#16a34a"></i>New Car
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="vehicleType" id="typeUsed" value="USED"
+                                                   th:checked="${vehicle.vehicleType == 'USED'}"
+                                                   onchange="toggleUsedCarFields(this.value)">
+                                            <label class="form-check-label" for="typeUsed">
+                                                <i class="fas fa-car-side me-1" style="color:#FF5A00"></i>Used Car
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Vehicle Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" th:field="*{name}" required placeholder="e.g. Tata Nexon EV">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">URL Slug</label>
+                                    <input type="text" class="form-control" th:field="*{slug}" placeholder="auto-generated if blank">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Brand</label>
+                                    <input type="text" class="form-control" th:field="*{brand}" placeholder="e.g. Tata, Maruti">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Model</label>
+                                    <input type="text" class="form-control" th:field="*{model}" placeholder="e.g. Nexon, Creta">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Model Year</label>
+                                    <input type="number" class="form-control" th:field="*{modelYear}" placeholder="2024">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Category</label>
+                                    <select class="form-select" th:field="*{category}">
+                                        <option value="">Select</option>
+                                        <option value="SUV">SUV</option>
+                                        <option value="Sedan">Sedan</option>
+                                        <option value="Hatchback">Hatchback</option>
+                                        <option value="MPV">MPV</option>
+                                        <option value="Coupe">Coupe</option>
+                                        <option value="Pickup">Pickup Truck</option>
+                                        <option value="Convertible">Convertible</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Fuel Type</label>
+                                    <select class="form-select" th:field="*{fuelType}">
+                                        <option value="">Select</option>
+                                        <option value="Petrol">Petrol</option>
+                                        <option value="Diesel">Diesel</option>
+                                        <option value="Electric">Electric</option>
+                                        <option value="Hybrid">Hybrid</option>
+                                        <option value="CNG">CNG</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Transmission</label>
+                                    <select class="form-select" th:field="*{transmissionType}">
+                                        <option value="">Select</option>
+                                        <option value="Manual">Manual</option>
+                                        <option value="Automatic">Automatic</option>
+                                        <option value="CVT">CVT</option>
+                                        <option value="DCT">DCT</option>
+                                        <option value="AMT">AMT</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Seating Capacity</label>
+                                    <input type="number" class="form-control" th:field="*{seatingCapacity}" min="2" max="9">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Starting Price (₹)</label>
+                                    <input type="number" step="0.01" class="form-control" th:field="*{startingPrice}" placeholder="800000">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Max Price (₹)</label>
+                                    <input type="number" step="0.01" class="form-control" th:field="*{maxPrice}" placeholder="1500000">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Short Description</label>
+                                    <textarea class="form-control" th:field="*{shortDescription}" rows="2" maxlength="500"></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Full Description</label>
+                                    <textarea class="form-control" th:field="*{fullDescription}" rows="5"></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Hero Image URL</label>
+                                    <input type="text" class="form-control" th:field="*{heroImage}" placeholder="/uploads/...">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Thumbnail Image URL</label>
+                                    <input type="text" class="form-control" th:field="*{thumbnailImage}" placeholder="/uploads/...">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Featured</label>
+                                    <select class="form-select" th:field="*{isFeatured}">
+                                        <option value="false">No</option>
+                                        <option value="true">Yes</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Status</label>
+                                    <select class="form-select" th:field="*{isActive}">
+                                        <option value="true">Active</option>
+                                        <option value="false">Inactive</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Body Type</label>
+                                    <input type="text" class="form-control" th:field="*{bodyType}" placeholder="e.g. Compact SUV">
+                                </div>
+
+                                <!-- Used Car Fields -->
+                                <div id="usedCarFields" class="col-12" th:style="${vehicle.vehicleType == 'USED'} ? '' : 'display:none'">
+                                    <hr>
+                                    <label class="form-label fw-600" style="color:#FF5A00"><i class="fas fa-car-side me-1"></i>Used Car Details</label>
+                                    <div class="row g-3 mt-0">
+                                        <div class="col-md-4">
+                                            <label class="form-label">KM Driven <span class="text-danger">*</span></label>
+                                            <input type="number" class="form-control" th:field="*{kmDriven}" placeholder="e.g. 45000" min="0">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Ownership Count</label>
+                                            <select class="form-select" th:field="*{ownershipCount}">
+                                                <option value="">Select</option>
+                                                <option value="1">1st Owner</option>
+                                                <option value="2">2nd Owner</option>
+                                                <option value="3">3rd Owner</option>
+                                                <option value="4">4th+ Owner</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Condition</label>
+                                            <select class="form-select" th:field="*{condition}">
+                                                <option value="">Select</option>
+                                                <option value="Excellent">Excellent</option>
+                                                <option value="Good">Good</option>
+                                                <option value="Fair">Fair</option>
+                                                <option value="Poor">Poor</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Registration Year</label>
+                                            <input type="number" class="form-control" th:field="*{registrationYear}" placeholder="e.g. 2020" min="1990" max="2025">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Registration State</label>
+                                            <select class="form-select" th:field="*{registrationState}">
+                                                <option value="">Select State</option>
+                                                <option>Delhi</option><option>Maharashtra</option><option>Karnataka</option>
+                                                <option>Tamil Nadu</option><option>Telangana</option><option>Gujarat</option>
+                                                <option>Rajasthan</option><option>Uttar Pradesh</option><option>West Bengal</option>
+                                                <option>Madhya Pradesh</option><option>Punjab</option><option>Haryana</option>
+                                                <option>Bihar</option><option>Andhra Pradesh</option><option>Odisha</option>
+                                                <option>Kerala</option><option>Jharkhand</option><option>Assam</option>
+                                                <option>Chhattisgarh</option><option>Uttarakhand</option><option>Himachal Pradesh</option>
+                                                <option>Goa</option><option>Other</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Insurance Type</label>
+                                            <select class="form-select" th:field="*{insuranceType}">
+                                                <option value="">Select</option>
+                                                <option value="Comprehensive">Comprehensive</option>
+                                                <option value="Third Party">Third Party</option>
+                                                <option value="Expired">Expired</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Seller Type</label>
+                                            <select class="form-select" th:field="*{sellerType}">
+                                                <option value="">Select</option>
+                                                <option value="Dealer">Dealer</option>
+                                                <option value="Individual">Individual</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- YouTube Reels -->
+                                <div class="col-12"><hr><label class="form-label fw-600 text-muted"><i class="fab fa-youtube text-danger me-1"></i>YouTube Reels Settings</label></div>
+                                <div class="col-12 mb-2">
+                                    <label class="form-label">Auto-detect from YouTube URL</label>
+                                    <div class="input-group">
+                                        <input type="text" id="ytUrlInput" class="form-control" placeholder="Paste YouTube URL (shorts, channel, video)">
+                                        <button type="button" class="btn btn-outline-danger" onclick="autoFillYT()">
+                                            <i class="fab fa-youtube me-1"></i>Auto Fill
+                                        </button>
+                                    </div>
+                                    <div id="ytStatus" class="form-text"></div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Enable YouTube</label>
+                                    <select class="form-select" th:field="*{youtubeEnabled}" id="ytEnabled">
+                                        <option value="false">No</option>
+                                        <option value="true">Yes</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label">YouTube Channel ID / URL</label>
+                                    <input type="text" class="form-control" th:field="*{youtubeChannelId}" placeholder="UCxxxxxxxx or YouTube shorts URL" id="ytChannelField">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Layout</label>
+                                    <select class="form-select" th:field="*{youtubeLayout}" id="ytLayoutField">
+                                        <option value="grid">Grid</option>
+                                        <option value="shorts">Shorts</option>
+                                        <option value="carousel">Carousel</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Limit</label>
+                                    <input type="number" class="form-control" th:field="*{youtubeLimit}" min="1" max="20">
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2 mt-4">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i>Save Vehicle
+                                </button>
+                                <a th:href="@{/admin/vehicles}" class="btn btn-outline-secondary">Cancel</a>
+                            </div>
+                        </form>
+
+                        <!-- FAQ Management Section (shown only on edit) -->
+                        <div th:if="${!isNew}" class="mt-5" id="faqSection">
+                            <hr>
+                            <h5 class="fw-700 mb-3"><i class="fas fa-question-circle text-primary me-2"></i>FAQ Management</h5>
+
+                            <!-- Vehicle-specific FAQs -->
+                            <div class="card mb-3">
+                                <div class="card-header d-flex align-items-center justify-content-between py-2">
+                                    <h6 class="mb-0 fw-600"><i class="fas fa-car me-1"></i>Vehicle FAQs</h6>
+                                    <button type="button" class="btn btn-sm btn-primary" onclick="showAddFaqModal()">
+                                        <i class="fas fa-plus me-1"></i>Add FAQ
+                                    </button>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div id="vehicleFaqList" class="p-3">
+                                        <p class="text-muted text-center my-3"><i class="fas fa-spinner fa-spin me-1"></i>Loading FAQs...</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Model FAQs from MODEL_FAQ_QUESTION_ANSWER -->
+                            <div class="card">
+                                <div class="card-header d-flex align-items-center justify-content-between py-2">
+                                    <h6 class="mb-0 fw-600"><i class="fas fa-database me-1"></i>Model FAQ Templates (from DB)</h6>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-sm btn-success" onclick="fetchModelFaqs()">
+                                            <i class="fas fa-download me-1"></i>Fetch from DB
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="showAddModelFaqModal()">
+                                            <i class="fas fa-plus me-1"></i>Add Template FAQ
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div id="modelFaqList" class="p-3">
+                                        <p class="text-muted text-center mb-0"><i class="fas fa-info-circle me-1"></i>Click <strong>"Fetch from DB"</strong> to load FAQ templates from MODEL_FAQ_QUESTION_ANSWER table.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FAQ Modal -->
+<div class="modal fade" id="faqModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="faqModalTitle">Add FAQ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="faqId">
+                <div class="mb-3">
+                    <label class="form-label">Question <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="faqQuestion" placeholder="Enter the FAQ question" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Answer <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="faqAnswer" rows="4" placeholder="Enter the answer" required></textarea>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Display Order</label>
+                        <input type="number" class="form-control" id="faqOrder" value="0">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Active</label>
+                        <select class="form-select" id="faqActive">
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveFaq()">
+                    <i class="fas fa-save me-1"></i>Save FAQ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Model FAQ Modal -->
+<div class="modal fade" id="modelFaqModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modelFaqModalTitle">Add Model FAQ Template</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modelFaqId">
+                <div class="mb-3">
+                    <label class="form-label">Question <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="modelFaqQuestion" placeholder="Enter the FAQ question" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Answer <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="modelFaqAnswer" rows="4" placeholder="Enter the answer (HTML supported)" required></textarea>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Category</label>
+                        <input type="text" class="form-control" id="modelFaqCategory" placeholder="e.g. Specifications, Price">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="modelFaqStartDate">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="modelFaqEndDate">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Filter</label>
+                        <input type="text" class="form-control" id="modelFaqFilter" placeholder="e.g. current, upcoming">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Filter Category</label>
+                        <input type="text" class="form-control" id="modelFaqFilterCategory" placeholder="e.g. modelstatus">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveModelFaq()">
+                    <i class="fas fa-save me-1"></i>Save Model FAQ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/admin.js}"></script>
+<script th:if="${!isNew}" th:inline="javascript">
+const vehicleId = /*[[${vehicle.id}]]*/ 0;
+const csrfToken = /*[[${_csrf.token}]]*/ '';
+const csrfHeader = /*[[${_csrf.headerName}]]*/ '';
+
+// ─── Vehicle FAQ CRUD ────────────────────────────
+
+function loadVehicleFaqs() {
+    fetch(`/api/vehicles/${vehicleId}/faqs`)
+        .then(r => r.json())
+        .then(faqs => {
+            const container = document.getElementById('vehicleFaqList');
+            if (!faqs || faqs.length === 0) {
+                container.innerHTML = '<p class="text-muted text-center mb-0">No FAQs yet. Click "Add FAQ" to create one.</p>';
+                return;
+            }
+            let html = '<div class="table-responsive"><table class="table table-sm table-hover mb-0">';
+            html += '<thead><tr><th style="width:40px">#</th><th>Question</th><th>Answer</th><th style="width:80px">Order</th><th style="width:100px">Actions</th></tr></thead><tbody>';
+            faqs.forEach(faq => {
+                const answer = faq.answer ? (faq.answer.length > 80 ? faq.answer.substring(0, 80) + '...' : faq.answer) : '';
+                html += `<tr>
+                    <td>${faq.id}</td>
+                    <td class="fw-500" style="font-size:13px">${escHtml(faq.question)}</td>
+                    <td style="font-size:12px;color:#6b7280">${escHtml(answer)}</td>
+                    <td>${faq.displayOrder || 0}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editFaq(${faq.id})"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteFaq(${faq.id})"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        })
+        .catch(() => {
+            document.getElementById('vehicleFaqList').innerHTML = '<p class="text-danger text-center">Error loading FAQs</p>';
+        });
+}
+
+function showAddFaqModal() {
+    document.getElementById('faqModalTitle').textContent = 'Add FAQ';
+    document.getElementById('faqId').value = '';
+    document.getElementById('faqQuestion').value = '';
+    document.getElementById('faqAnswer').value = '';
+    document.getElementById('faqOrder').value = '0';
+    document.getElementById('faqActive').value = 'true';
+    new bootstrap.Modal(document.getElementById('faqModal')).show();
+}
+
+function editFaq(id) {
+    fetch(`/api/vehicles/faqs/${id}`, { method: 'GET' })
+        .catch(() => null);
+    // Use data from the existing list
+    fetch(`/api/vehicles/${vehicleId}/faqs`)
+        .then(r => r.json())
+        .then(faqs => {
+            const faq = faqs.find(f => f.id === id);
+            if (!faq) return;
+            document.getElementById('faqModalTitle').textContent = 'Edit FAQ';
+            document.getElementById('faqId').value = faq.id;
+            document.getElementById('faqQuestion').value = faq.question || '';
+            document.getElementById('faqAnswer').value = faq.answer || '';
+            document.getElementById('faqOrder').value = faq.displayOrder || 0;
+            document.getElementById('faqActive').value = faq.isActive ? 'true' : 'false';
+            new bootstrap.Modal(document.getElementById('faqModal')).show();
+        });
+}
+
+function saveFaq() {
+    const id = document.getElementById('faqId').value;
+    const payload = {
+        question: document.getElementById('faqQuestion').value.trim(),
+        answer: document.getElementById('faqAnswer').value.trim(),
+        displayOrder: parseInt(document.getElementById('faqOrder').value) || 0,
+        isActive: document.getElementById('faqActive').value === 'true'
+    };
+
+    if (!payload.question || !payload.answer) {
+        alert('Question and Answer are required.');
+        return;
+    }
+
+    const headers = { 'Content-Type': 'application/json' };
+    headers[csrfHeader] = csrfToken;
+
+    const url = id ? `/api/vehicles/faqs/${id}` : `/api/vehicles/${vehicleId}/faqs`;
+    const method = id ? 'PUT' : 'POST';
+
+    fetch(url, { method, headers, body: JSON.stringify(payload) })
+        .then(r => r.json())
+        .then(() => {
+            bootstrap.Modal.getInstance(document.getElementById('faqModal')).hide();
+            loadVehicleFaqs();
+        })
+        .catch(err => alert('Error saving FAQ: ' + err.message));
+}
+
+function deleteFaq(id) {
+    if (!confirm('Delete this FAQ?')) return;
+    const headers = {};
+    headers[csrfHeader] = csrfToken;
+    fetch(`/api/vehicles/faqs/${id}`, { method: 'DELETE', headers })
+        .then(() => loadVehicleFaqs())
+        .catch(err => alert('Error: ' + err.message));
+}
+
+// ─── Model FAQ CRUD ──────────────────────────────
+
+function fetchModelFaqs() {
+    const container = document.getElementById('modelFaqList');
+    container.innerHTML = '<p class="text-muted text-center my-3"><i class="fas fa-spinner fa-spin me-1"></i>Fetching FAQs from database...</p>';
+    fetch('/api/vehicles/model-faqs')
+        .then(r => r.json())
+        .then(faqs => {
+            const container = document.getElementById('modelFaqList');
+            if (!faqs || faqs.length === 0) {
+                container.innerHTML = '<p class="text-muted text-center mb-0">No Model FAQ templates found in database.</p>';
+                return;
+            }
+            let html = '<div class="table-responsive"><table class="table table-sm table-hover mb-0">';
+            html += '<thead><tr><th style="width:40px">ID</th><th>Question</th><th>Category</th><th>Active Period</th><th>Filter</th><th style="width:100px">Actions</th></tr></thead><tbody>';
+            faqs.forEach(faq => {
+                const question = faq.question ? (faq.question.length > 60 ? faq.question.substring(0, 60) + '...' : faq.question) : '';
+                const period = (faq.startDate || '?') + ' → ' + (faq.endDate || 'No end');
+                const isActive = isDateActive(faq.startDate, faq.endDate);
+                html += `<tr class="${isActive ? '' : 'table-secondary'}">
+                    <td>${faq.questionId}</td>
+                    <td class="fw-500" style="font-size:12px">${escHtml(question)}</td>
+                    <td><span class="badge bg-info">${escHtml(faq.category || '-')}</span></td>
+                    <td style="font-size:11px">${period}</td>
+                    <td style="font-size:11px">${escHtml(faq.filter || '-')} / ${escHtml(faq.filterCategory || '-')}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editModelFaq(${faq.questionId})"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteModelFaq(${faq.questionId})"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody></table></div>';
+            html += `<div class="p-2 bg-light border-top" style="font-size:11px"><i class="fas fa-info-circle text-muted me-1"></i>Showing ${faqs.length} total FAQ templates. Greyed rows are inactive (outside active date range).</div>`;
+            container.innerHTML = html;
+        })
+        .catch(() => {
+            document.getElementById('modelFaqList').innerHTML = '<p class="text-danger text-center">Error loading Model FAQs</p>';
+        });
+}
+
+function showAddModelFaqModal() {
+    document.getElementById('modelFaqModalTitle').textContent = 'Add Model FAQ Template';
+    document.getElementById('modelFaqId').value = '';
+    document.getElementById('modelFaqQuestion').value = '';
+    document.getElementById('modelFaqAnswer').value = '';
+    document.getElementById('modelFaqCategory').value = '';
+    document.getElementById('modelFaqStartDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('modelFaqEndDate').value = '';
+    document.getElementById('modelFaqFilter').value = '';
+    document.getElementById('modelFaqFilterCategory').value = '';
+    new bootstrap.Modal(document.getElementById('modelFaqModal')).show();
+}
+
+function editModelFaq(id) {
+    fetch('/api/vehicles/model-faqs')
+        .then(r => r.json())
+        .then(faqs => {
+            const faq = faqs.find(f => f.questionId === id);
+            if (!faq) return;
+            document.getElementById('modelFaqModalTitle').textContent = 'Edit Model FAQ Template #' + id;
+            document.getElementById('modelFaqId').value = faq.questionId;
+            document.getElementById('modelFaqQuestion').value = faq.question || '';
+            document.getElementById('modelFaqAnswer').value = faq.answer || '';
+            document.getElementById('modelFaqCategory').value = faq.category || '';
+            document.getElementById('modelFaqStartDate').value = faq.startDate || '';
+            document.getElementById('modelFaqEndDate').value = faq.endDate || '';
+            document.getElementById('modelFaqFilter').value = faq.filter || '';
+            document.getElementById('modelFaqFilterCategory').value = faq.filterCategory || '';
+            new bootstrap.Modal(document.getElementById('modelFaqModal')).show();
+        });
+}
+
+function saveModelFaq() {
+    const id = document.getElementById('modelFaqId').value;
+    const payload = {
+        question: document.getElementById('modelFaqQuestion').value.trim(),
+        answer: document.getElementById('modelFaqAnswer').value.trim(),
+        category: document.getElementById('modelFaqCategory').value.trim() || null,
+        startDate: document.getElementById('modelFaqStartDate').value || null,
+        endDate: document.getElementById('modelFaqEndDate').value || null,
+        filter: document.getElementById('modelFaqFilter').value.trim() || null,
+        filterCategory: document.getElementById('modelFaqFilterCategory').value.trim() || null
+    };
+
+    if (!payload.question || !payload.answer) {
+        alert('Question and Answer are required.');
+        return;
+    }
+
+    const headers = { 'Content-Type': 'application/json' };
+    headers[csrfHeader] = csrfToken;
+
+    const url = id ? `/api/vehicles/model-faqs/${id}` : '/api/vehicles/model-faqs';
+    const method = id ? 'PUT' : 'POST';
+
+    fetch(url, { method, headers, body: JSON.stringify(payload) })
+        .then(r => r.json())
+        .then(() => {
+            bootstrap.Modal.getInstance(document.getElementById('modelFaqModal')).hide();
+            fetchModelFaqs();
+        })
+        .catch(err => alert('Error saving Model FAQ: ' + err.message));
+}
+
+function deleteModelFaq(id) {
+    if (!confirm('Permanently delete this Model FAQ template? This cannot be undone.')) return;
+    const headers = {};
+    headers[csrfHeader] = csrfToken;
+    fetch(`/api/vehicles/model-faqs/${id}`, { method: 'DELETE', headers })
+        .then(() => fetchModelFaqs())
+        .catch(err => alert('Error: ' + err.message));
+}
+
+// ─── Utility ─────────────────────────────────────
+
+function escHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function isDateActive(start, end) {
+    const today = new Date().toISOString().split('T')[0];
+    if (start && start > today) return false;
+    if (end && end < today) return false;
+    return true;
+}
+
+// Load on page ready
+document.addEventListener('DOMContentLoaded', function() {
+    loadVehicleFaqs();
+});
+</script>
+<script>
+function toggleUsedCarFields(type) {
+    document.getElementById('usedCarFields').style.display = (type === 'USED') ? '' : 'none';
+}
+// init on load
+document.addEventListener('DOMContentLoaded', function() {
+    var checked = document.querySelector('input[name="vehicleType"]:checked');
+    if (checked) toggleUsedCarFields(checked.value);
+});
+
+async function autoFillYT() {
+    const url = document.getElementById('ytUrlInput').value.trim();
+    const status = document.getElementById('ytStatus');
+    if (!url) { status.innerHTML = '<span class="text-danger">Enter a YouTube URL</span>'; return; }
+
+    status.innerHTML = '<span class="text-primary"><i class="fas fa-spinner fa-spin me-1"></i>Fetching...</span>';
+
+    try {
+        const resp = await fetch('/api/pages/youtube/resolve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: url })
+        });
+        const result = await resp.json();
+
+        if (result.error) {
+            // Even if resolve fails, just use the URL directly
+            document.getElementById('ytChannelField').value = url;
+            document.getElementById('ytEnabled').value = 'true';
+            if (url.includes('/shorts/')) document.getElementById('ytLayoutField').value = 'shorts';
+            status.innerHTML = '<span class="text-warning"><i class="fas fa-info-circle me-1"></i>URL saved directly. Video will embed on website.</span>';
+            return;
+        }
+
+        // Fill channel ID
+        if (result.channelId) {
+            document.getElementById('ytChannelField').value = result.channelId;
+        } else {
+            document.getElementById('ytChannelField').value = url;
+        }
+
+        // Auto-set layout
+        if (result.type === 'shorts') document.getElementById('ytLayoutField').value = 'shorts';
+
+        // Enable
+        document.getElementById('ytEnabled').value = 'true';
+
+        status.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>' + (result.message || 'Done! Click Save.') + '</span>';
+    } catch(e) {
+        // Fallback: just save the URL
+        document.getElementById('ytChannelField').value = url;
+        document.getElementById('ytEnabled').value = 'true';
+        if (url.includes('/shorts/')) document.getElementById('ytLayoutField').value = 'shorts';
+        status.innerHTML = '<span class="text-warning"><i class="fas fa-check me-1"></i>URL saved. Click Save to apply.</span>';
+    }
+}
+</script>
+</body>
+</html>

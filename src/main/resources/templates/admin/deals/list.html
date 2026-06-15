@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deal Management — CarDekho</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/admin.css}" rel="stylesheet">
+</head>
+<body>
+<div th:replace="~{admin/fragments/sidebar :: sidebar}"></div>
+<div class="main-content">
+    <div th:replace="~{admin/fragments/sidebar :: topbar('Deal Management')}"></div>
+    <div class="content-area">
+        <div class="card">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h6 class="mb-0 fw-600">Vehicle Deals & Offers</h6>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-success btn-sm" onclick="showFetchDealUrlModal()"><i class="fas fa-download me-1"></i>Fetch Offer From URL</button>
+                    <button class="btn btn-primary btn-sm" onclick="showDealModal()"><i class="fas fa-plus me-1"></i>Create Deal</button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div id="dealList" class="p-3"><p class="text-muted text-center"><i class="fas fa-spinner fa-spin me-1"></i>Loading...</p></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Deal Modal -->
+<div class="modal fade" id="dealModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title" id="dealModalTitle">Create Deal</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <input type="hidden" id="dealId">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Select Brand *</label>
+                        <select id="ddBrand" class="form-select" onchange="onBrandChange()" required>
+                            <option value="">-- Select Brand --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Select Vehicle *</label>
+                        <select id="ddVehicleId" class="form-select" onchange="onVehicleSelect()" required>
+                            <option value="">-- Select Vehicle --</option>
+                        </select>
+                        <input type="hidden" id="ddVehicleName">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Select Dealer</label>
+                        <select id="ddDealerId" class="form-select" onchange="onDealerSelect()">
+                            <option value="">-- Select Dealer --</option>
+                        </select>
+                        <input type="hidden" id="ddDealerName">
+                    </div>
+                    <div class="col-md-4"><label class="form-label">City</label><input type="text" id="ddCity" class="form-control"></div>
+                    <div class="col-12"><label class="form-label">Deal Title</label><input type="text" id="ddTitle" class="form-control" placeholder="e.g. June Mega Offer"></div>
+                    <div class="col-12"><label class="form-label">Description</label><textarea id="ddDesc" class="form-control" rows="2"></textarea></div>
+                    <div class="col-md-4"><label class="form-label">Cash Discount (₹)</label><input type="number" id="ddCash" class="form-control" value="0"></div>
+                    <div class="col-md-4"><label class="form-label">Exchange Bonus (₹)</label><input type="number" id="ddExchange" class="form-control" value="0"></div>
+                    <div class="col-md-4"><label class="form-label">Corporate Discount (₹)</label><input type="number" id="ddCorp" class="form-control" value="0"></div>
+                    <div class="col-md-4"><label class="form-label">Finance Benefit (₹)</label><input type="number" id="ddFinance" class="form-control" value="0"></div>
+                    <div class="col-md-4"><label class="form-label">Insurance Benefit (₹)</label><input type="number" id="ddInsurance" class="form-control" value="0"></div>
+                    <div class="col-md-4"><label class="form-label">Priority</label><input type="number" id="ddPriority" class="form-control" value="0"></div>
+                    <div class="col-md-4"><label class="form-label">Start Date</label><input type="date" id="ddStart" class="form-control"></div>
+                    <div class="col-md-4"><label class="form-label">End Date</label><input type="date" id="ddEnd" class="form-control"></div>
+                    <div class="col-md-2"><label class="form-label">Featured</label><select id="ddFeatured" class="form-select"><option value="false">No</option><option value="true">Yes</option></select></div>
+                    <div class="col-md-2"><label class="form-label">Active</label><select id="ddActive" class="form-select"><option value="true">Yes</option><option value="false">No</option></select></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary" onclick="saveDeal()"><i class="fas fa-save me-1"></i>Save Deal</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/admin.js}"></script>
+<script>
+let allVehicles = [];
+let allDealers = [];
+let allBrands = [];
+
+// Load vehicles and dealers for dropdowns
+async function loadDropdowns() {
+    const [vResp, dResp] = await Promise.all([
+        fetch('/api/vehicles?size=200'),
+        fetch('/api/deals/dealers')
+    ]);
+    const vData = await vResp.json();
+    allVehicles = vData.content || vData;
+    allDealers = await dResp.json();
+
+    // Extract unique brands
+    const brandSet = new Set();
+    allVehicles.forEach(v => { if (v.brand) brandSet.add(v.brand); });
+    allBrands = Array.from(brandSet).sort();
+
+    // Populate brand dropdown
+    const bSelect = document.getElementById('ddBrand');
+    bSelect.innerHTML = '<option value="">-- Select Brand --</option>';
+    allBrands.forEach(b => { bSelect.innerHTML += `<option value="${b}">${b}</option>`; });
+}
+
+function onBrandChange() {
+    const brand = document.getElementById('ddBrand').value;
+
+    // Filter vehicles by brand
+    const vSelect = document.getElementById('ddVehicleId');
+    vSelect.innerHTML = '<option value="">-- Select Vehicle --</option>';
+    const filtered = brand ? allVehicles.filter(v => v.brand === brand) : allVehicles;
+    filtered.forEach(v => { vSelect.innerHTML += `<option value="${v.id}">${v.name}</option>`; });
+
+    // Filter dealers by brand
+    const dSelect = document.getElementById('ddDealerId');
+    dSelect.innerHTML = '<option value="">-- Select Dealer --</option>';
+    const filteredDealers = brand ? allDealers.filter(d => d.brand === brand) : allDealers;
+    filteredDealers.forEach(d => { dSelect.innerHTML += `<option value="${d.id}">${d.dealerName} ${d.city ? '- '+d.city : ''}</option>`; });
+}
+
+function onVehicleSelect() {
+    const id = document.getElementById('ddVehicleId').value;
+    const v = allVehicles.find(x => x.id == id);
+    document.getElementById('ddVehicleName').value = v ? v.name : '';
+}
+
+function onDealerSelect() {
+    const id = document.getElementById('ddDealerId').value;
+    const d = allDealers.find(x => x.id == id);
+    document.getElementById('ddDealerName').value = d ? d.dealerName : '';
+    if (d && d.city) document.getElementById('ddCity').value = d.city;
+}
+
+function loadDeals() {
+    fetch('/api/deals').then(r=>r.json()).then(deals => {
+        const container = document.getElementById('dealList');
+        if (!deals || deals.length === 0) { container.innerHTML = '<p class="text-muted text-center">No deals yet. Create one!</p>'; return; }
+        let html = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Vehicle</th><th>Dealer</th><th>City</th><th>Total Savings</th><th>Period</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+        deals.forEach(d => {
+            const savings = d.totalSavings ? '₹ ' + Number(d.totalSavings).toLocaleString('en-IN') : '-';
+            const period = (d.startDate || '?') + ' → ' + (d.endDate || 'No end');
+            html += `<tr><td class="fw-500">${d.vehicleName||'-'}</td><td>${d.dealerName||'-'}</td><td>${d.city||'-'}</td><td style="color:#FF6B00;font-weight:700">${savings}</td><td style="font-size:11px">${period}</td><td><span class="badge ${d.isActive?'badge-active':'badge-inactive'}">${d.isActive?'Active':'Inactive'}</span></td><td><button class="btn btn-sm btn-outline-primary me-1" onclick="editDeal(${d.id})"><i class="fas fa-edit"></i></button><button class="btn btn-sm btn-outline-danger" onclick="deleteDeal(${d.id})"><i class="fas fa-trash"></i></button></td></tr>`;
+        });
+        html += '</tbody></table></div>';
+        container.innerHTML = html;
+    });
+}
+
+function showDealModal() {
+    document.getElementById('dealModalTitle').textContent = 'Create Deal';
+    document.getElementById('dealId').value = '';
+    document.getElementById('ddBrand').value = '';
+    document.getElementById('ddVehicleId').innerHTML = '<option value="">-- Select Vehicle --</option>';
+    document.getElementById('ddVehicleName').value = '';
+    document.getElementById('ddDealerId').innerHTML = '<option value="">-- Select Dealer --</option>';
+    document.getElementById('ddDealerName').value = '';
+    document.getElementById('ddCity').value = '';
+    document.getElementById('ddTitle').value = '';
+    document.getElementById('ddDesc').value = '';
+    ['ddCash','ddExchange','ddCorp','ddFinance','ddInsurance','ddPriority'].forEach(id => document.getElementById(id).value = '0');
+    document.getElementById('ddStart').value = new Date().toISOString().split('T')[0];
+    document.getElementById('ddEnd').value = '';
+    document.getElementById('ddFeatured').value = 'false';
+    document.getElementById('ddActive').value = 'true';
+    new bootstrap.Modal(document.getElementById('dealModal')).show();
+}
+
+function editDeal(id) {
+    fetch(`/api/deals/${id}`).then(r=>r.json()).then(d => {
+        document.getElementById('dealModalTitle').textContent = 'Edit Deal';
+        document.getElementById('dealId').value = d.id;
+
+        // Set brand and trigger cascade
+        const vehicle = allVehicles.find(v => v.id == d.vehicleId);
+        const brand = vehicle ? vehicle.brand : '';
+        document.getElementById('ddBrand').value = brand;
+        onBrandChange(); // populate vehicle/dealer lists
+
+        // Now set vehicle and dealer
+        setTimeout(() => {
+            document.getElementById('ddVehicleId').value = d.vehicleId || '';
+            document.getElementById('ddVehicleName').value = d.vehicleName || '';
+            document.getElementById('ddDealerId').value = d.dealerId || '';
+            document.getElementById('ddDealerName').value = d.dealerName || '';
+        }, 50);
+
+        document.getElementById('ddCity').value = d.city || '';
+        document.getElementById('ddTitle').value = d.title || '';
+        document.getElementById('ddDesc').value = d.description || '';
+        document.getElementById('ddCash').value = d.cashDiscount || 0;
+        document.getElementById('ddExchange').value = d.exchangeBonus || 0;
+        document.getElementById('ddCorp').value = d.corporateDiscount || 0;
+        document.getElementById('ddFinance').value = d.financeBenefit || 0;
+        document.getElementById('ddInsurance').value = d.insuranceBenefit || 0;
+        document.getElementById('ddPriority').value = d.priority || 0;
+        document.getElementById('ddStart').value = d.startDate || '';
+        document.getElementById('ddEnd').value = d.endDate || '';
+        document.getElementById('ddFeatured').value = d.isFeatured ? 'true' : 'false';
+        document.getElementById('ddActive').value = d.isActive ? 'true' : 'false';
+        new bootstrap.Modal(document.getElementById('dealModal')).show();
+    });
+}
+
+function saveDeal() {
+    const vehicleId = document.getElementById('ddVehicleId').value;
+    if (!vehicleId) { alert('Please select a vehicle'); return; }
+
+    const id = document.getElementById('dealId').value;
+    const payload = {
+        vehicleId: parseInt(vehicleId),
+        vehicleName: document.getElementById('ddVehicleName').value,
+        dealerId: document.getElementById('ddDealerId').value ? parseInt(document.getElementById('ddDealerId').value) : null,
+        dealerName: document.getElementById('ddDealerName').value || null,
+        city: document.getElementById('ddCity').value || null,
+        title: document.getElementById('ddTitle').value || null,
+        description: document.getElementById('ddDesc').value || null,
+        cashDiscount: parseFloat(document.getElementById('ddCash').value) || 0,
+        exchangeBonus: parseFloat(document.getElementById('ddExchange').value) || 0,
+        corporateDiscount: parseFloat(document.getElementById('ddCorp').value) || 0,
+        financeBenefit: parseFloat(document.getElementById('ddFinance').value) || 0,
+        insuranceBenefit: parseFloat(document.getElementById('ddInsurance').value) || 0,
+        priority: parseInt(document.getElementById('ddPriority').value) || 0,
+        startDate: document.getElementById('ddStart').value || null,
+        endDate: document.getElementById('ddEnd').value || null,
+        isFeatured: document.getElementById('ddFeatured').value === 'true',
+        isActive: document.getElementById('ddActive').value === 'true'
+    };
+    const url = id ? `/api/deals/${id}` : '/api/deals';
+    fetch(url, { method: id ? 'PUT' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) })
+        .then(r=>r.json()).then(() => { bootstrap.Modal.getInstance(document.getElementById('dealModal')).hide(); loadDeals(); });
+}
+
+function deleteDeal(id) { if(!confirm('Delete this deal?')) return; fetch(`/api/deals/${id}`,{method:'DELETE'}).then(()=>loadDeals()); }
+
+function showFetchDealUrlModal() {
+    const url = prompt('Enter offer/deal page URL:');
+    if (!url || !url.trim()) return;
+    fetch('/api/deals/fetch-deal-url', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({url: url.trim()}) })
+        .then(r => r.json())
+        .then(result => {
+            if (result.error) { alert(result.error); return; }
+            const d = result.data;
+            // Open deal modal with fetched data
+            document.getElementById('dealModalTitle').textContent = 'Create Deal (Fetched from URL)';
+            document.getElementById('dealId').value = '';
+            document.getElementById('ddTitle').value = d.title || '';
+            document.getElementById('ddDesc').value = d.description || '';
+            document.getElementById('ddCash').value = d.cashDiscount || 0;
+            document.getElementById('ddExchange').value = d.exchangeBonus || 0;
+            document.getElementById('ddCorp').value = d.corporateDiscount || 0;
+            document.getElementById('ddFinance').value = d.financeBenefit || 0;
+            document.getElementById('ddInsurance').value = d.insuranceBenefit || 0;
+            document.getElementById('ddStart').value = new Date().toISOString().split('T')[0];
+            document.getElementById('ddEnd').value = d.endDate || '';
+            document.getElementById('ddFeatured').value = 'false';
+            document.getElementById('ddActive').value = 'true';
+            document.getElementById('ddPriority').value = '0';
+            new bootstrap.Modal(document.getElementById('dealModal')).show();
+            alert('Deal data fetched! Please select Brand and Vehicle, then save.');
+        })
+        .catch(e => alert('Error: ' + e.message));
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadDropdowns();
+    loadDeals();
+});
+</script>
+</body>
+</html>

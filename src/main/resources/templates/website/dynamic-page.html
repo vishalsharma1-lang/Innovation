@@ -1,0 +1,263 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${page.seoTitle != null ? page.seoTitle : page.title}">Dynamic Page</title>
+    <meta th:if="${page.seoDescription != null}" name="description" th:content="${page.seoDescription}">
+    <meta th:if="${page.seoKeywords != null}" name="keywords" th:content="${page.seoKeywords}">
+    <meta th:if="${page.robots != null}" name="robots" th:content="${page.robots}">
+    <link th:if="${page.canonicalUrl != null}" rel="canonical" th:href="${page.canonicalUrl}">
+    <meta th:if="${page.ogTitle != null}" property="og:title" th:content="${page.ogTitle}">
+    <meta th:if="${page.ogDescription != null}" property="og:description" th:content="${page.ogDescription}">
+    <meta th:if="${page.ogImage != null}" property="og:image" th:content="${page.ogImage}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/website.css}" rel="stylesheet">
+    <th:block th:if="${page.headScripts != null}" th:utext="${page.headScripts}"></th:block>
+    <style>
+        .section-block { padding: 48px 0; }
+        .section-hero { min-height: 50vh; display: flex; align-items: center; background: linear-gradient(135deg, #1a1a2e, #0f3460); color: white; }
+        .section-text { padding: 40px 0; }
+        .section-image img { width: 100%; border-radius: 12px; }
+        .section-video .ratio { border-radius: 12px; overflow: hidden; }
+        .section-faq .faq-item { border: 1px solid #e8ecf0; border-radius: 10px; padding: 16px; margin-bottom: 10px; }
+        .section-features .feature-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; }
+        .section-features .feature-item i { color: #10b981; }
+        .section-testimonial { background: #f9fafb; border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top" id="mainNav">
+    <div class="container">
+        <a class="navbar-brand fw-700" href="/"><i class="fas fa-bolt me-2"></i>CarDekho Deals</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="/vehicles">Vehicles</a></li>
+                <li class="nav-item"><a class="nav-link" href="/contact">Contact</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Render sections dynamically -->
+<div th:each="section : ${sections}">
+
+    <!-- HERO Section -->
+    <section th:if="${section.sectionType == 'hero'}" class="section-block section-hero"
+             th:style="${section.imageUrl != null ? 'background-image:url(' + section.imageUrl + ');background-size:cover' : ''}">
+        <div class="container">
+            <h1 class="fw-800 mb-2" th:text="${section.title}"></h1>
+            <p th:if="${section.subtitle != null}" class="opacity-75 mb-3" style="font-size:18px" th:text="${section.subtitle}"></p>
+            <p th:if="${section.plainText != null}" class="opacity-60" th:text="${section.plainText}"></p>
+            <a th:if="${section.buttonUrl != null}" th:href="${section.buttonUrl}" class="btn btn-hero-primary mt-3"
+               th:text="${section.buttonText != null ? section.buttonText : 'Learn More'}"></a>
+        </div>
+    </section>
+
+    <!-- HEADING Section -->
+    <section th:if="${section.sectionType == 'heading'}" class="section-block text-center"
+             th:style="${section.backgroundColor != null ? 'background:' + section.backgroundColor : ''}">
+        <div class="container">
+            <h2 class="fw-700" th:text="${section.title}"></h2>
+            <p th:if="${section.subtitle != null}" class="text-muted" th:text="${section.subtitle}"></p>
+        </div>
+    </section>
+
+    <!-- TEXT Section (rich content) -->
+    <section th:if="${section.sectionType == 'text'}" class="section-block section-text">
+        <div class="container">
+            <h3 th:if="${section.title != null}" class="fw-700 mb-3" th:text="${section.title}"></h3>
+            <div th:if="${section.content != null}" th:utext="${section.content}"></div>
+            <p th:if="${section.content == null && section.plainText != null}" th:text="${section.plainText}"></p>
+        </div>
+    </section>
+
+    <!-- IMAGE Section -->
+    <section th:if="${section.sectionType == 'image'}" class="section-block section-image">
+        <div class="container text-center">
+            <h3 th:if="${section.title != null}" class="fw-700 mb-3" th:text="${section.title}"></h3>
+            <img th:src="${section.imageUrl}" th:alt="${section.imageAlt != null ? section.imageAlt : 'Image'}">
+        </div>
+    </section>
+
+    <!-- VIDEO Section -->
+    <section th:if="${section.sectionType == 'video'}" class="section-block section-video">
+        <div class="container">
+            <h3 th:if="${section.title != null}" class="fw-700 mb-3 text-center" th:text="${section.title}"></h3>
+            <div class="ratio ratio-16x9 mx-auto" style="max-width:800px">
+                <iframe th:src="${section.videoUrl}" allowfullscreen></iframe>
+            </div>
+        </div>
+    </section>
+
+    <!-- BUTTON Section -->
+    <section th:if="${section.sectionType == 'button'}" class="section-block text-center">
+        <div class="container">
+            <a th:href="${section.buttonUrl}" class="btn btn-primary-gradient btn-lg"
+               th:text="${section.buttonText != null ? section.buttonText : 'Click Here'}"></a>
+        </div>
+    </section>
+
+    <!-- FAQ Section (uses jsonData) -->
+    <section th:if="${section.sectionType == 'faq'}" class="section-block section-faq">
+        <div class="container">
+            <h3 class="fw-700 mb-4 text-center" th:text="${section.title != null ? section.title : 'FAQs'}"></h3>
+            <div th:if="${section.content != null}" th:utext="${section.content}"></div>
+        </div>
+    </section>
+
+    <!-- TESTIMONIAL Section -->
+    <section th:if="${section.sectionType == 'testimonial'}" class="section-block">
+        <div class="container">
+            <h3 class="fw-700 mb-4 text-center" th:text="${section.title != null ? section.title : 'Testimonials'}"></h3>
+            <div th:if="${section.content != null}" class="section-testimonial" th:utext="${section.content}"></div>
+        </div>
+    </section>
+
+    <!-- FEATURES Section -->
+    <section th:if="${section.sectionType == 'features'}" class="section-block" style="background:#f9fafb">
+        <div class="container">
+            <h3 class="fw-700 mb-4 text-center" th:text="${section.title != null ? section.title : 'Features'}"></h3>
+            <div th:if="${section.content != null}" th:utext="${section.content}"></div>
+        </div>
+    </section>
+
+    <!-- PRICING Section -->
+    <section th:if="${section.sectionType == 'pricing'}" class="section-block">
+        <div class="container">
+            <h3 class="fw-700 mb-4 text-center" th:text="${section.title != null ? section.title : 'Pricing'}"></h3>
+            <div th:if="${section.content != null}" th:utext="${section.content}"></div>
+        </div>
+    </section>
+
+    <!-- GALLERY Section -->
+    <section th:if="${section.sectionType == 'gallery'}" class="section-block">
+        <div class="container">
+            <h3 th:if="${section.title != null}" class="fw-700 mb-4 text-center" th:text="${section.title}"></h3>
+            <div th:if="${section.content != null}" th:utext="${section.content}"></div>
+            <img th:if="${section.imageUrl != null}" th:src="${section.imageUrl}" class="img-fluid rounded-3">
+        </div>
+    </section>
+
+    <!-- CUSTOM Section (raw HTML) -->
+    <section th:if="${section.sectionType == 'custom'}" class="section-block" th:classappend="${section.cssClass}"
+             th:style="${section.backgroundColor != null ? 'background:' + section.backgroundColor : ''}">
+        <div class="container" th:utext="${section.content}"></div>
+    </section>
+
+</div>
+
+<!-- Vehicle Listings (auto-included from Vehicle Management) -->
+<section th:if="${vehicles != null && !vehicles.isEmpty()}" class="section-block" style="background:#f4f6f9">
+
+<!-- YouTube Reels Section (rendered if enabled) -->
+<section th:if="${youtubeVideos != null && !youtubeVideos.isEmpty()}" class="section-block" style="background:#0f0f0f;color:white;padding:48px 0">
+    <div class="container">
+        <h3 class="fw-700 mb-4 text-center"><i class="fab fa-youtube text-danger me-2"></i>Latest Videos</h3>
+
+        <!-- Grid Layout -->
+        <div th:if="${youtubeLayout == 'grid'}" class="row g-3">
+            <div th:each="vid : ${youtubeVideos}" class="col-6 col-md-4 col-lg-3">
+                <a th:href="${vid.url}" target="_blank" class="text-decoration-none" style="display:block;border-radius:12px;overflow:hidden;background:#1a1a1a;transition:transform .2s">
+                    <div style="position:relative">
+                        <img th:src="${vid.thumbnail}" style="width:100%;height:160px;object-fit:cover" th:alt="${vid.title}">
+                        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.3)">
+                            <i class="fas fa-play-circle" style="font-size:36px;color:white;opacity:.9"></i>
+                        </div>
+                    </div>
+                    <div th:if="${youtubeShowTitle}" style="padding:10px 12px">
+                        <p style="font-size:12px;color:#e0e0e0;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" th:text="${vid.title}"></p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Carousel Layout -->
+        <div th:if="${youtubeLayout == 'carousel'}" class="d-flex gap-3 overflow-auto pb-3" style="scroll-snap-type:x mandatory">
+            <div th:each="vid : ${youtubeVideos}" style="min-width:280px;scroll-snap-align:start">
+                <a th:href="${vid.url}" target="_blank" class="text-decoration-none">
+                    <div style="border-radius:12px;overflow:hidden;background:#1a1a1a">
+                        <img th:src="${vid.thumbnail}" style="width:100%;height:160px;object-fit:cover">
+                        <div th:if="${youtubeShowTitle}" style="padding:10px"><p style="font-size:12px;color:#e0e0e0;margin:0" th:text="${vid.title}"></p></div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Shorts Vertical Layout -->
+        <div th:if="${youtubeLayout == 'shorts'}" class="d-flex gap-3 overflow-auto pb-3 justify-content-center" style="scroll-snap-type:x mandatory">
+            <div th:each="vid : ${youtubeVideos}" style="min-width:180px;max-width:180px;scroll-snap-align:start">
+                <a th:href="${vid.shortsUrl}" target="_blank" class="text-decoration-none">
+                    <div style="border-radius:14px;overflow:hidden;background:#1a1a1a;border:2px solid #333">
+                        <img th:src="${vid.thumbnail}" style="width:100%;height:320px;object-fit:cover">
+                        <div style="padding:8px;text-align:center">
+                            <i class="fab fa-youtube text-danger me-1"></i>
+                            <span style="font-size:11px;color:#aaa">Short</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Slider Layout -->
+        <div th:if="${youtubeLayout == 'slider'}" class="row g-3">
+            <div th:each="vid,stat : ${youtubeVideos}" class="col-12 col-md-6" th:if="${stat.index < 4}">
+                <div style="border-radius:12px;overflow:hidden;background:#1a1a1a">
+                    <div class="ratio ratio-16x9">
+                        <iframe th:src="${vid.embedUrl + (youtubeAutoplay != null and youtubeAutoplay ? '?autoplay=1&mute=1' : '')}" allowfullscreen></iframe>
+                    </div>
+                    <div th:if="${youtubeShowTitle}" style="padding:12px">
+                        <p style="font-size:13px;color:#e0e0e0;margin:0;font-weight:500" th:text="${vid.title}"></p>
+                        <p th:if="${youtubeShowDesc}" style="font-size:11px;color:#888;margin-top:4px" th:text="${vid.description}"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Vehicle Listings -->
+<section th:if="${vehicles != null && !vehicles.isEmpty()}" class="section-block" style="background:#f4f6f9">
+    <div class="container">
+        <h3 class="fw-700 mb-4 text-center">Our Vehicles</h3>
+        <div class="row g-4">
+            <div th:each="vehicle : ${vehicles}" class="col-md-6 col-lg-4">
+                <a th:href="@{/vehicles/{slug}(slug=${vehicle.slug})}" class="text-decoration-none">
+                    <div style="background:white;border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);transition:all .3s">
+                        <img th:if="${vehicle.thumbnailImage != null}" th:src="${vehicle.thumbnailImage}" th:alt="${vehicle.name}"
+                             style="width:100%;height:180px;object-fit:cover">
+                        <div th:unless="${vehicle.thumbnailImage != null}" style="width:100%;height:180px;background:linear-gradient(135deg,#FF6B00,#FF8C38);display:flex;align-items:center;justify-content:center;color:white;font-size:40px">
+                            <i class="fas fa-car"></i>
+                        </div>
+                        <div style="padding:16px">
+                            <h6 class="fw-700 text-dark mb-1" th:text="${vehicle.name}"></h6>
+                            <p class="text-muted mb-2" style="font-size:12px" th:text="${vehicle.brand + ' • ' + (vehicle.category != null ? vehicle.category : '')}"></p>
+                            <div th:if="${vehicle.startingPrice != null}" style="color:#FF6B00;font-weight:700;font-size:16px">
+                                ₹ <span th:text="${#numbers.formatDecimal(vehicle.startingPrice, 1, 0)}"></span>
+                                <span style="font-size:11px;color:#9ca3af;font-weight:400"> onwards</span>
+                            </div>
+                            <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+                                <span th:if="${vehicle.fuelType != null}" style="background:#f3f4f6;padding:3px 8px;border-radius:5px;font-size:11px" th:text="${vehicle.fuelType}"></span>
+                                <span th:if="${vehicle.transmissionType != null}" style="background:#f3f4f6;padding:3px 8px;border-radius:5px;font-size:11px" th:text="${vehicle.transmissionType}"></span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="site-footer">
+    <div class="container text-center footer-copy">&copy; 2024 CarDekho Deals. All rights reserved.</div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/website.js}"></script>
+<th:block th:if="${page.bodyScripts != null}" th:utext="${page.bodyScripts}"></th:block>
+</body>
+</html>

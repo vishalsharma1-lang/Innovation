@@ -1,0 +1,12 @@
+package com.cms.repository.page;
+
+import com.cms.entity.page.PageVersion;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface PageVersionRepository extends JpaRepository<PageVersion, Long> {
+    List<PageVersion> findByPageIdOrderByVersionNumberDesc(Long pageId);
+}

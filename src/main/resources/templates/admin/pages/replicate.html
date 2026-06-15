@@ -1,0 +1,233 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Replicate Page From URL — CMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/admin.css}" rel="stylesheet">
+    <style>
+        .url-box { background: linear-gradient(135deg, #f0f2ff, #e8f4fd); border: 2px solid #c7d2fe; border-radius: 14px; padding: 28px; }
+        .preview-frame { border: 1px solid #e8ecf0; border-radius: 10px; overflow: hidden; margin-top: 20px; }
+        .preview-frame iframe { width: 100%; height: 500px; border: none; }
+        .section-editor { background: white; border: 1px solid #e8ecf0; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+        .section-editor .badge { font-size: 10px; }
+        .spinner-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; z-index: 9999; align-items: center; justify-content: center; flex-direction: column; color: white; }
+        .spinner-overlay.active { display: flex; }
+        .extracted-item { background: #f9fafb; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; font-size: 13px; }
+    </style>
+</head>
+<body>
+<div th:replace="~{admin/fragments/sidebar :: sidebar}"></div>
+<div class="main-content">
+    <div th:replace="~{admin/fragments/sidebar :: topbar('Replicate Page From URL')}"></div>
+    <div class="content-area">
+
+        <!-- Step 1: URL Input -->
+        <div class="url-box mb-4">
+            <h5 class="fw-700 mb-3"><i class="fas fa-clone me-2 text-primary"></i>Replicate Any Page</h5>
+            <p class="text-muted mb-3" style="font-size:13px">Enter any website URL. The system will extract the page structure, content, images, and SEO data. You can then edit everything before saving as a new dynamic page.</p>
+            <div class="row g-3 align-items-end">
+                <div class="col-lg-7">
+                    <label class="form-label fw-600">Source URL</label>
+                    <input type="url" id="sourceUrl" class="form-control" placeholder="https://example.com/any-page" style="font-size:15px;padding:12px">
+                </div>
+                <div class="col-lg-3">
+                    <label class="form-label fw-600">Page Title</label>
+                    <input type="text" id="pageTitle" class="form-control" placeholder="My New Page">
+                </div>
+                <div class="col-lg-2">
+                    <button onclick="replicatePage()" class="btn btn-primary w-100" id="fetchBtn" style="padding:12px">
+                        <i class="fas fa-magic me-1"></i>Fetch
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alert -->
+        <div id="alertBox" style="display:none"></div>
+
+        <!-- Step 2: Extracted Content Preview -->
+        <div id="previewSection" style="display:none">
+            <div class="card">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h6 class="mb-0 fw-600"><i class="fas fa-bolt me-2 text-primary"></i>Extracted Page Sections</h6>
+                    <div class="d-flex gap-2">
+                        <button onclick="clearAll()" class="btn btn-outline-secondary btn-sm"><i class="fas fa-times me-1"></i>Clear</button>
+                        <button onclick="saveReplicatedPage()" class="btn btn-primary btn-sm" id="saveBtn"><i class="fas fa-save me-1"></i>Save as New Page</button>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <!-- SEO Preview -->
+                    <div class="section-editor">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge bg-primary">SEO</span>
+                            <strong style="font-size:13px">Page SEO & Meta</strong>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-12"><input type="text" id="seoTitle" class="form-control form-control-sm" placeholder="SEO Title"></div>
+                            <div class="col-12"><textarea id="seoDesc" class="form-control form-control-sm" rows="2" placeholder="Meta Description"></textarea></div>
+                            <div class="col-md-6"><input type="text" id="seoKeywords" class="form-control form-control-sm" placeholder="Keywords"></div>
+                            <div class="col-md-6"><input type="text" id="ogImage" class="form-control form-control-sm" placeholder="OG Image URL"></div>
+                        </div>
+                    </div>
+
+                    <!-- Sections list -->
+                    <div id="sectionsList"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Spinner -->
+<div id="spinnerOverlay" class="spinner-overlay">
+    <div class="spinner-border text-light mb-3" style="width:48px;height:48px"></div>
+    <h5>Extracting page content...</h5>
+    <p style="opacity:.7">Analyzing structure, text, images, and SEO</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+let extractedSections = [];
+
+async function replicatePage() {
+    const url = document.getElementById('sourceUrl').value.trim();
+    if (!url) { showAlert('danger', 'Enter a URL'); return; }
+
+    document.getElementById('spinnerOverlay').classList.add('active');
+    document.getElementById('fetchBtn').disabled = true;
+
+    try {
+        const resp = await fetch('/api/pages/replicate/fetch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: url })
+        });
+        const result = await resp.json();
+        if (!resp.ok || result.error) { showAlert('danger', result.error || 'Failed'); return; }
+
+        const data = result.data;
+        extractedSections = data.sections || [];
+
+        // Fill SEO
+        document.getElementById('seoTitle').value = data.seoTitle || '';
+        document.getElementById('seoDesc').value = data.seoDescription || '';
+        document.getElementById('seoKeywords').value = data.seoKeywords || '';
+        document.getElementById('ogImage').value = data.ogImage || '';
+        if (!document.getElementById('pageTitle').value) {
+            document.getElementById('pageTitle').value = data.pageTitle || '';
+        }
+
+        // Render sections
+        renderSections();
+        document.getElementById('previewSection').style.display = 'block';
+        showAlert('success', `Extracted ${extractedSections.length} sections! Review and edit below.`);
+
+    } catch(e) { showAlert('danger', 'Error: ' + e.message); }
+    finally {
+        document.getElementById('spinnerOverlay').classList.remove('active');
+        document.getElementById('fetchBtn').disabled = false;
+    }
+}
+
+function renderSections() {
+    const container = document.getElementById('sectionsList');
+    container.innerHTML = extractedSections.map((s, i) => `
+        <div class="section-editor">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-secondary">${s.sectionType}</span>
+                    <strong style="font-size:13px">#${i + 1} ${s.title || s.sectionType}</strong>
+                </div>
+                <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-warning" onclick="toggleSection(${i})" title="Toggle visibility">
+                        <i class="fas fa-eye${s.isVisible === false ? '-slash' : ''}"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeSection(${i})" title="Remove">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            ${s.title ? `<div class="extracted-item"><strong>Title:</strong> ${s.title}</div>` : ''}
+            ${s.subtitle ? `<div class="extracted-item"><strong>Subtitle:</strong> ${s.subtitle}</div>` : ''}
+            ${s.plainText ? `<div class="extracted-item"><strong>Text:</strong> ${s.plainText.substring(0, 200)}${s.plainText.length > 200 ? '...' : ''}</div>` : ''}
+            ${s.imageUrl ? `<div class="extracted-item"><strong>Image:</strong> <img src="${s.imageUrl}" style="height:40px;border-radius:4px;margin-left:8px" onerror="this.style.display='none'"> <code style="font-size:11px">${s.imageUrl.substring(0, 60)}</code></div>` : ''}
+            ${s.buttonText ? `<div class="extracted-item"><strong>Button:</strong> ${s.buttonText} → ${s.buttonUrl || '#'}</div>` : ''}
+            ${s.videoUrl ? `<div class="extracted-item"><strong>Video:</strong> <code>${s.videoUrl}</code></div>` : ''}
+        </div>
+    `).join('');
+}
+
+function toggleSection(i) { extractedSections[i].isVisible = !(extractedSections[i].isVisible !== false); renderSections(); }
+function removeSection(i) { extractedSections.splice(i, 1); renderSections(); }
+
+async function saveReplicatedPage() {
+    const title = document.getElementById('pageTitle').value.trim();
+    if (!title) { showAlert('danger', 'Page title is required'); return; }
+
+    document.getElementById('saveBtn').disabled = true;
+    document.getElementById('saveBtn').innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+
+    try {
+        // 1. Create page
+        const pageResp = await fetch('/api/pages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: title,
+                status: 'draft',
+                seoTitle: document.getElementById('seoTitle').value,
+                seoDescription: document.getElementById('seoDesc').value,
+                seoKeywords: document.getElementById('seoKeywords').value,
+                ogImage: document.getElementById('ogImage').value
+            })
+        });
+        const pageResult = await pageResp.json();
+        const pageId = pageResult.data.id;
+
+        // 2. Create sections
+        for (let i = 0; i < extractedSections.length; i++) {
+            const s = extractedSections[i];
+            if (s.isVisible === false) continue;
+            await fetch(`/api/pages/${pageId}/sections`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sectionType: s.sectionType,
+                    sectionKey: s.sectionKey || s.sectionType + '_' + i,
+                    displayOrder: i,
+                    isVisible: true,
+                    title: s.title,
+                    subtitle: s.subtitle,
+                    content: s.content,
+                    plainText: s.plainText,
+                    imageUrl: s.imageUrl,
+                    imageAlt: s.imageAlt,
+                    videoUrl: s.videoUrl,
+                    buttonText: s.buttonText,
+                    buttonUrl: s.buttonUrl
+                })
+            });
+        }
+
+        showAlert('success', `Page "${title}" created with ${extractedSections.length} sections! <a href="/admin/pages/edit/${pageId}">Edit it →</a>`);
+        document.getElementById('previewSection').style.display = 'none';
+
+    } catch(e) { showAlert('danger', 'Save failed: ' + e.message); }
+    finally {
+        document.getElementById('saveBtn').disabled = false;
+        document.getElementById('saveBtn').innerHTML = '<i class="fas fa-save me-1"></i>Save as New Page';
+    }
+}
+
+function clearAll() { extractedSections = []; document.getElementById('previewSection').style.display = 'none'; }
+function showAlert(type, msg) {
+    const box = document.getElementById('alertBox');
+    box.style.display = 'block';
+    box.innerHTML = `<div class="alert alert-${type} alert-dismissible mb-4"><i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+}
+</script>
+</body>
+</html>

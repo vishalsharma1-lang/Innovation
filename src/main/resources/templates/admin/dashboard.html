@@ -1,0 +1,174 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — CarDekho</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/admin.css}" rel="stylesheet">
+</head>
+<body>
+
+<div th:replace="~{admin/fragments/sidebar :: sidebar}"></div>
+
+<div class="main-content">
+    <div th:replace="~{admin/fragments/sidebar :: topbar('Dashboard')}"></div>
+
+    <div class="content-area">
+
+        <div th:if="${success}" class="alert alert-success alert-dismissible mb-4" role="alert">
+            <i class="fas fa-check-circle me-2"></i><span th:text="${success}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${error}" class="alert alert-danger alert-dismissible mb-4" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i><span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-xl-3">
+                <div class="stat-card">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="stat-label">SEO Settings</div>
+                            <div class="stat-number" th:text="${totalSeo}">0</div>
+                            <a th:href="@{/admin/seo}" class="stat-link">Manage SEO →</a>
+                        </div>
+                        <div class="stat-icon" style="background:#ede9fe;color:#7c3aed">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="stat-card">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="stat-label">Content Blocks</div>
+                            <div class="stat-number" th:text="${totalContent}">0</div>
+                            <a th:href="@{/admin/content}" class="stat-link">Manage Content →</a>
+                        </div>
+                        <div class="stat-icon" style="background:#dbeafe;color:#1d4ed8">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="stat-card">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="stat-label">Images</div>
+                            <div class="stat-number" th:text="${totalImages}">0</div>
+                            <a th:href="@{/admin/images}" class="stat-link">Manage Images →</a>
+                        </div>
+                        <div class="stat-icon" style="background:#fce7f3;color:#9d174d">
+                            <i class="fas fa-images"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="stat-card">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="stat-label">Banners</div>
+                            <div class="stat-number" th:text="${totalBanners}">0</div>
+                            <a th:href="@{/admin/banners}" class="stat-link">Manage Banners →</a>
+                        </div>
+                        <div class="stat-icon" style="background:#d1fae5;color:#065f46">
+                            <i class="fas fa-photo-video"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card mb-4">
+            <div class="card-header"><h6 class="mb-0 fw-600">Quick Actions</h6></div>
+            <div class="card-body">
+                <div class="d-flex gap-2 flex-wrap">
+                    <a th:href="@{/admin/seo/new}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i>Add SEO Page
+                    </a>
+                    <a th:href="@{/admin/content/new}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i>Add Content Block
+                    </a>
+                    <a th:href="@{/admin/banners/new}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i>Add Banner
+                    </a>
+                    <a th:href="@{/admin/images/upload}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-upload me-1"></i>Upload Image
+                    </a>
+                    <a href="/" target="_blank" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-external-link-alt me-1"></i>Preview Website
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent tables -->
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <h6 class="mb-0 fw-600">Recent Content Updates</h6>
+                        <a th:href="@{/admin/content}" class="text-primary" style="font-size:12px;text-decoration:none">View all</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead><tr><th>Page</th><th>Section</th><th>Heading</th></tr></thead>
+                            <tbody>
+                            <tr th:each="c : ${recentContent}">
+                                <td><span class="badge bg-light text-dark" th:text="${c.pageName}"></span></td>
+                                <td th:text="${c.sectionName}"></td>
+                                <td th:text="${#strings.abbreviate(c.heading != null ? c.heading : '-', 30)}"></td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(recentContent)}">
+                                <td colspan="3" class="text-center text-muted py-3">No content yet</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <h6 class="mb-0 fw-600">Recent Banners</h6>
+                        <a th:href="@{/admin/banners}" class="text-primary" style="font-size:12px;text-decoration:none">View all</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead><tr><th>Page</th><th>Title</th><th>Status</th></tr></thead>
+                            <tbody>
+                            <tr th:each="b : ${recentBanners}">
+                                <td><span class="badge bg-light text-dark" th:text="${b.pageName}"></span></td>
+                                <td th:text="${#strings.abbreviate(b.bannerTitle != null ? b.bannerTitle : '-', 28)}"></td>
+                                <td>
+                                    <span class="badge rounded-pill"
+                                          th:classappend="${b.isActive ? 'badge-active' : 'badge-inactive'}"
+                                          th:text="${b.isActive ? 'Active' : 'Inactive'}"></span>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(recentBanners)}">
+                                <td colspan="3" class="text-center text-muted py-3">No banners yet</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/admin.js}"></script>
+</body>
+</html>

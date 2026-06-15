@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<!-- Navbar fragment: th:replace="~{website/fragments/layout :: nav('home')}" -->
+<nav th:fragment="nav(active)" class="navbar navbar-expand-lg navbar-dark fixed-top" id="mainNav">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <span class="brand-mark"><i class="fas fa-car-side"></i></span>
+            <span class="brand-text">CarDekho <em>Deals</em></span>
+        </a>
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto align-items-lg-center">
+                <li class="nav-item">
+                    <a class="nav-link" th:classappend="${active == 'home'} ? 'active'" href="/">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:classappend="${active == 'vehicles'} ? 'active'" href="/vehicles">New Cars</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:classappend="${active == 'used-cars'} ? 'active'" href="/used-cars">Used Cars</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:classappend="${active == 'contact'} ? 'active'" href="/contact">Contact</a>
+                </li>
+                <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+                    <a class="btn btn-nav-cta" href="/vehicles"><i class="fas fa-tags me-1"></i>View Deals</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Footer fragment -->
+<footer th:fragment="footer" class="site-footer">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <h5 class="footer-brand"><span class="brand-mark-sm"><i class="fas fa-car-side"></i></span> CarDekho Deals</h5>
+                <p class="footer-desc">India's trusted platform to compare new car prices, discover dealer offers, and save on your next car purchase.</p>
+                <div class="footer-social">
+                    <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                </div>
+            </div>
+            <div class="col-md-2 col-6">
+                <h6 class="footer-heading">Explore</h6>
+                <ul class="footer-links">
+                    <li><a href="/vehicles">All Cars</a></li>
+                    <li><a href="/vehicles">Latest Deals</a></li>
+                    <li><a href="/about">About Us</a></li>
+                    <li><a href="/contact">Contact</a></li>
+                </ul>
+            </div>
+            <div class="col-md-2 col-6">
+                <h6 class="footer-heading">Popular</h6>
+                <ul class="footer-links">
+                    <li><a href="/brand/maruti-suzuki">Maruti Suzuki</a></li>
+                    <li><a href="/brand/hyundai">Hyundai</a></li>
+                    <li><a href="/brand/tata">Tata</a></li>
+                    <li><a href="/brand/mahindra">Mahindra</a></li>
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <h6 class="footer-heading">Get Best Price</h6>
+                <p class="footer-desc mb-3">Connect with authorized dealers and unlock exclusive discounts.</p>
+                <a href="/vehicles" class="btn btn-primary-gradient btn-sm"><i class="fas fa-bolt me-1"></i>Browse Cars &amp; Deals</a>
+            </div>
+        </div>
+        <hr class="footer-divider">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 footer-copy">
+            <span>&copy; 2024 CarDekho Deals. All rights reserved.</span>
+            <span class="text-muted-footer">Prices are indicative. Ex-showroom. Offers subject to dealer terms.</span>
+        </div>
+    </div>
+</footer>
+
+<!-- Vehicle card fragment for reuse -->
+<a th:fragment="vehicleCard(vehicle, vehicleDeals)"
+   th:href="@{/vehicles/{slug}(slug=${vehicle.slug})}"
+   class="vehicle-card-link">
+    <article class="vehicle-card">
+        <div class="vehicle-card-image-wrap">
+            <img th:if="${not #strings.isEmpty(vehicle.heroImage)}"
+                 th:src="${vehicle.heroImage}" th:alt="${vehicle.name}"
+                 loading="lazy"
+                 onerror="this.style.display='none';this.nextElementSibling.classList.add('show')">
+            <img th:if="${#strings.isEmpty(vehicle.heroImage) and not #strings.isEmpty(vehicle.thumbnailImage)}"
+                 th:src="${vehicle.thumbnailImage}" th:alt="${vehicle.name}"
+                 loading="lazy"
+                 onerror="this.style.display='none';this.nextElementSibling.classList.add('show')">
+            <div class="no-img-placeholder" style="display:none" th:style="${#strings.isEmpty(vehicle.heroImage) and #strings.isEmpty(vehicle.thumbnailImage)} ? '' : 'display:none'">
+                <i class="fas fa-car" aria-hidden="true"></i>
+            </div>
+            <!-- Deal badge - prominent green pill -->
+            <span th:if="${vehicleDeals != null and vehicleDeals.containsKey(vehicle.id)}"
+                  class="vehicle-deal-badge">
+                <i class="fas fa-bolt" style="font-size:9px"></i>
+                Save ₹<span th:text="${#numbers.formatDecimal(vehicleDeals.get(vehicle.id).get('maxSavings'), 1, 0)}"></span>
+            </span>
+            <span th:if="${vehicle.brand != null}" class="vehicle-brand-chip" th:text="${vehicle.brand}">Brand</span>
+        </div>
+        <div class="card-body">
+            <h3 class="vehicle-card-title" th:text="${vehicle.name}">Vehicle</h3>
+            <p class="vehicle-card-desc" th:text="${vehicle.shortDescription != null ? vehicle.shortDescription : (vehicle.category != null ? vehicle.category : 'New Car')}"></p>
+            <div class="specs">
+                <span th:if="${vehicle.fuelType != null}" class="spec-badge"><i class="fas fa-gas-pump"></i><span th:text="${vehicle.fuelType}"></span></span>
+                <span th:if="${vehicle.transmissionType != null}" class="spec-badge"><i class="fas fa-cog"></i><span th:text="${vehicle.transmissionType}"></span></span>
+                <span th:if="${vehicle.seatingCapacity != null}" class="spec-badge"><i class="fas fa-users"></i><span th:text="${vehicle.seatingCapacity + ' Seater'}"></span></span>
+            </div>
+            <!-- Price row with effective price if deal exists -->
+            <div class="d-flex align-items-end justify-content-between mt-auto pt-2">
+                <div th:if="${vehicle.startingPrice != null}">
+                    <div class="vehicle-card-price">
+                        ₹&nbsp;<span th:text="${#numbers.formatDecimal(vehicle.startingPrice, 1, 0)}"></span>
+                        <small>onwards</small>
+                    </div>
+                    <div th:if="${vehicleDeals != null and vehicleDeals.containsKey(vehicle.id)}"
+                         style="font-size:11px;color:#059669;font-weight:600;margin-top:2px">
+                        <i class="fas fa-tags" style="font-size:9px"></i> Deal available
+                    </div>
+                </div>
+                <span class="vehicle-card-cta">Details <i class="fas fa-arrow-right"></i></span>
+            </div>
+        </div>
+    </article>
+</a>
+
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Overview — CarDekho</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/admin.css}" rel="stylesheet">
+    <style>
+        .analytics-card { background:#fff; border-radius:12px; padding:24px; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+        .metric-val { font-size:2rem; font-weight:700; color:#0f172a; }
+        .metric-label { font-size:12px; color:#64748b; text-transform:uppercase; letter-spacing:.5px; margin-top:2px; }
+        .metric-icon { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; }
+        .event-badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; background:#f1f5f9; color:#334155; }
+        .recent-table td, .recent-table th { font-size:13px; }
+        .funnel-bar { height:28px; border-radius:6px; background:linear-gradient(90deg,#FF5A00,#ff8c42); transition:width .6s; }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{admin/fragments/sidebar :: sidebar}"></div>
+
+<div class="main-content">
+    <div th:replace="~{admin/fragments/sidebar :: topbar('Analytics Overview')}"></div>
+
+    <div class="content-area">
+
+        <!-- Sub-nav -->
+        <div class="mb-4 d-flex gap-2 flex-wrap">
+            <a th:href="@{/admin/analytics/overview}" class="btn btn-sm btn-primary">Overview</a>
+            <a th:href="@{/admin/analytics/deals}" class="btn btn-sm btn-outline-secondary">Deal Analytics</a>
+            <a th:href="@{/admin/analytics/vehicles}" class="btn btn-sm btn-outline-secondary">Vehicle Analytics</a>
+            <a th:href="@{/admin/analytics/funnel}" class="btn btn-sm btn-outline-secondary">Funnel</a>
+            <a th:href="@{/admin/analytics/search}" class="btn btn-sm btn-outline-secondary">Search</a>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-xl-3">
+                <div class="analytics-card">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="metric-icon" style="background:#fff7ed;color:#FF5A00"><i class="fas fa-eye"></i></div>
+                        <div>
+                            <div class="metric-val" th:text="${stats['pageViews']}">0</div>
+                            <div class="metric-label">Page Views</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="analytics-card">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="metric-icon" style="background:#f0fdf4;color:#16a34a"><i class="fas fa-hand-pointer"></i></div>
+                        <div>
+                            <div class="metric-val" th:text="${stats['dealClicks']}">0</div>
+                            <div class="metric-label">Deal Clicks</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="analytics-card">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="metric-icon" style="background:#eff6ff;color:#2563eb"><i class="fas fa-file-alt"></i></div>
+                        <div>
+                            <div class="metric-val" th:text="${stats['leads']}">0</div>
+                            <div class="metric-label">Leads Submitted</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="analytics-card">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="metric-icon" style="background:#fdf4ff;color:#9333ea"><i class="fas fa-users"></i></div>
+                        <div>
+                            <div class="metric-val" th:text="${stats['uniqueVisitors30d']}">0</div>
+                            <div class="metric-label">Unique Visitors (30d)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <!-- Event Counts -->
+            <div class="col-lg-6">
+                <div class="analytics-card h-100">
+                    <h6 class="fw-700 mb-3" style="font-weight:700">Events Breakdown</h6>
+                    <div th:each="row : ${stats['eventCounts']}" class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="event-badge" th:text="${row[0]}">event</span>
+                        <span class="fw-bold" th:text="${row[1]}">0</span>
+                    </div>
+                    <div th:if="${#lists.isEmpty(stats['eventCounts'])}" class="text-muted text-center py-4">
+                        No events recorded yet.
+                    </div>
+                </div>
+            </div>
+            <!-- Device Breakdown -->
+            <div class="col-lg-6">
+                <div class="analytics-card h-100">
+                    <h6 class="fw-700 mb-3" style="font-weight:700">Device Types</h6>
+                    <div th:each="row : ${stats['deviceTypes']}" class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span th:text="${row[0]}">device</span>
+                            <span th:text="${row[1]}">0</span>
+                        </div>
+                        <div class="progress" style="height:8px">
+                            <div class="progress-bar" style="background:#FF5A00"
+                                 th:style="'width:' + (${row[1]} * 100 / (${stats['totalEvents']} + 1)) + '%'"></div>
+                        </div>
+                    </div>
+                    <div th:if="${#lists.isEmpty(stats['deviceTypes'])}" class="text-muted text-center py-4">No data yet.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Events Table -->
+        <div class="analytics-card">
+            <h6 style="font-weight:700" class="mb-3">Recent Events</h6>
+            <div class="table-responsive">
+                <table class="table table-sm recent-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Event</th>
+                            <th>Deal</th>
+                            <th>Vehicle</th>
+                            <th>IP</th>
+                            <th>Device</th>
+                            <th>Browser</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="e : ${stats['recentEvents']}">
+                            <td><span class="event-badge" th:text="${e.eventName}">-</span></td>
+                            <td th:text="${e.dealName != null ? e.dealName : '-'}">-</td>
+                            <td th:text="${e.vehicleName != null ? e.vehicleName : '-'}">-</td>
+                            <td th:text="${e.userIp}">-</td>
+                            <td th:text="${e.deviceType}">-</td>
+                            <td th:text="${e.browser}">-</td>
+                            <td th:text="${#temporals.format(e.createdAt, 'dd MMM HH:mm')}">-</td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(stats['recentEvents'])}">
+                            <td colspan="7" class="text-center text-muted py-4">No events recorded yet. Events will appear here as users interact with the website.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

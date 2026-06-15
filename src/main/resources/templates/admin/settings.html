@@ -1,0 +1,75 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings — CarDekho</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/admin.css}" rel="stylesheet">
+</head>
+<body>
+<div th:replace="~{admin/fragments/sidebar :: sidebar}"></div>
+<div class="main-content">
+    <div th:replace="~{admin/fragments/sidebar :: topbar('Settings')}"></div>
+    <div class="content-area">
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card mb-4">
+                    <div class="card-header"><h6 class="mb-0 fw-600">Account Info</h6></div>
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div style="width:56px;height:56px;background:linear-gradient(135deg,#FF6B00,#FF8C38);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:22px;font-weight:700">
+                                <span sec:authentication="name">A</span>
+                            </div>
+                            <div>
+                                <div class="fw-600" sec:authentication="name">admin</div>
+                                <div class="text-muted" style="font-size:13px">Administrator</div>
+                            </div>
+                        </div>
+                        <p class="text-muted" style="font-size:13px">
+                            To change your password or update account details, edit the database directly or extend this panel with a change-password form.
+                        </p>
+                        <a th:href="@{/admin/logout}" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-sign-out-alt me-1"></i>Sign Out
+                        </a>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h6 class="mb-0 fw-600">API Endpoints</h6></div>
+                    <div class="card-body p-4">
+                        <p class="text-muted mb-3" style="font-size:13px">These REST endpoints serve data for external apps or testing:</p>
+                        <ul style="font-size:13px;padding-left:0;list-style:none">
+                            <li class="mb-2"><code>GET /content/{page}</code> — content for a page</li>
+                            <li class="mb-2"><code>GET /seo/{page}</code> — SEO settings for a page</li>
+                            <li class="mb-2"><code>GET /images</code> — all active images</li>
+                            <li class="mb-2"><code>POST /upload</code> — upload an image</li>
+                            <li class="mb-2"><code>DELETE /image/{id}</code> — delete an image</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header"><h6 class="mb-0 fw-600">System Info</h6></div>
+                    <div class="card-body p-4">
+                        <table class="table table-sm">
+                            <tbody>
+                            <tr><td class="text-muted">Admin URL</td><td><code>http://localhost:8080/admin</code></td></tr>
+                            <tr><td class="text-muted">Website URL</td><td><code>http://localhost:8080</code></td></tr>
+                            <tr><td class="text-muted">Upload Folder</td><td><code>./uploads/</code></td></tr>
+                            <tr><td class="text-muted">Database</td><td><code>cms_seo_db</code></td></tr>
+                            <tr><td class="text-muted">Java</td><td>Spring Boot 3.2</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/admin.js}"></script>
+</body>
+</html>

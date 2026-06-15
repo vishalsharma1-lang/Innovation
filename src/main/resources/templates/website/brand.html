@@ -1,0 +1,244 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${brandName + ' Cars - Price, Models & Specifications | CarDekho Deals'}">Brand</title>
+    <meta name="description" th:content="${'Explore all ' + brandName + ' cars. Check prices, specifications, features, and more. ' + vehicleCount + ' models available.'}">
+    <link rel="canonical" th:href="${'http://localhost:8080/brand/' + brandSlug}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/website.css}" rel="stylesheet">
+    <style>
+        :root { --primary: #FF6B00; --primary-light: #FFF3E8; --secondary: #1F2937; --border: #E5E7EB; --bg-section: #F8FAFC; }
+        .brand-hero { background: linear-gradient(135deg, var(--secondary) 0%, #374151 100%); padding: 100px 0 50px; }
+        .brand-hero h1 { color: white; font-weight: 800; font-size: 36px; letter-spacing: -0.5px; }
+        .brand-hero p { color: rgba(255,255,255,0.7); font-size: 16px; }
+        .brand-count { background: var(--primary); color: white; padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: 700; display: inline-block; }
+        .breadcrumb-bar { background: white; border-bottom: 1px solid var(--border); padding: 12px 0; }
+        .breadcrumb-bar a { color: var(--primary); text-decoration: none; font-size: 13px; font-weight: 500; }
+        .breadcrumb-bar span { color: #6B7280; font-size: 13px; }
+        .filter-bar { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .vehicle-card { border-radius: 12px; overflow: hidden; border: 1px solid var(--border); background: white; transition: all .3s; height: 100%; display: flex; flex-direction: column; }
+        .vehicle-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-color: var(--primary); }
+        .vehicle-card img { width: 100%; height: 180px; object-fit: cover; }
+        .vehicle-card .card-body { padding: 18px; flex: 1; display: flex; flex-direction: column; }
+        .vehicle-card .price { color: var(--primary); font-weight: 800; font-size: 17px; }
+        .vehicle-card .specs { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+        .vehicle-card .spec-badge { background: var(--bg-section); padding: 4px 10px; border-radius: 6px; font-size: 11px; color: #6B7280; font-weight: 500; border: 1px solid var(--border); }
+        .vehicle-card .btn-view { background: var(--primary); color: white; border: none; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 600; margin-top: auto; text-decoration: none; text-align: center; transition: all .2s; }
+        .vehicle-card .btn-view:hover { background: #E05E00; transform: translateY(-1px); }
+        .no-img-placeholder { width: 100%; height: 180px; background: linear-gradient(135deg, var(--primary), #FF8C38); display: flex; align-items: center; justify-content: center; color: white; font-size: 42px; }
+        .no-vehicles { text-align: center; padding: 60px 20px; }
+        .no-vehicles i { font-size: 48px; color: #D1D5DB; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top" id="mainNav" style="background:var(--secondary)">
+    <div class="container">
+        <a class="navbar-brand fw-700" href="/"><i class="fas fa-bolt me-2" style="color:var(--primary)"></i>CarDekho Deals</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="/vehicles">Vehicles</a></li>
+                <li class="nav-item"><a class="nav-link" href="/contact">Contact</a></li>
+                <li class="nav-item ms-2"><a class="btn btn-outline-light btn-sm" href="/admin/login">Admin</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Brand Hero -->
+<div class="brand-hero">
+    <div class="container">
+        <h1><span th:text="${brandName}">Brand</span> Cars</h1>
+        <p>Explore all <span th:text="${brandName}"></span> vehicles with prices, specifications, and features</p>
+        <span class="brand-count"><span th:text="${vehicleCount}">0</span> Models Available</span>
+    </div>
+</div>
+
+<!-- Breadcrumb -->
+<div class="breadcrumb-bar">
+    <div class="container">
+        <a href="/">Home</a> <span class="mx-2">›</span>
+        <a href="/vehicles">Cars</a> <span class="mx-2">›</span>
+        <span style="color:var(--secondary);font-weight:600" th:text="${brandName + ' Cars'}">Brand Cars</span>
+    </div>
+</div>
+
+<!-- Content -->
+<section style="background:var(--bg-section);padding:36px 0 60px">
+<div class="container">
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px">Search</label>
+                <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search vehicles..." onkeyup="filterVehicles()">
+            </div>
+            <div class="col-md-2">
+                <label style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px">Fuel Type</label>
+                <select id="fuelFilter" class="form-select form-select-sm" onchange="filterVehicles()">
+                    <option value="">All</option>
+                    <option value="Petrol">Petrol</option>
+                    <option value="Diesel">Diesel</option>
+                    <option value="Electric">Electric</option>
+                    <option value="Hybrid">Hybrid</option>
+                    <option value="CNG">CNG</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px">Transmission</label>
+                <select id="transFilter" class="form-select form-select-sm" onchange="filterVehicles()">
+                    <option value="">All</option>
+                    <option value="Manual">Manual</option>
+                    <option value="Automatic">Automatic</option>
+                    <option value="CVT">CVT</option>
+                    <option value="AMT">AMT</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px">Seating</label>
+                <select id="seatFilter" class="form-select form-select-sm" onchange="filterVehicles()">
+                    <option value="">All</option>
+                    <option value="4">4 Seater</option>
+                    <option value="5">5 Seater</option>
+                    <option value="6">6 Seater</option>
+                    <option value="7">7 Seater</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px">Sort By</label>
+                <select id="sortBy" class="form-select form-select-sm" onchange="sortVehicles()">
+                    <option value="name">Name</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                    <option value="latest">Latest</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <button class="btn btn-sm btn-outline-secondary w-100" onclick="resetFilters()" title="Reset"><i class="fas fa-redo"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vehicle Grid -->
+    <div class="row g-4" id="vehicleGrid">
+        <div th:each="vehicle : ${vehicles}" class="col-md-6 col-lg-4 vehicle-col"
+             th:data-name="${vehicle.name}"
+             th:data-fuel="${vehicle.fuelType != null ? vehicle.fuelType : ''}"
+             th:data-trans="${vehicle.transmissionType != null ? vehicle.transmissionType : ''}"
+             th:data-seats="${vehicle.seatingCapacity != null ? vehicle.seatingCapacity : ''}"
+             th:data-price="${vehicle.startingPrice != null ? vehicle.startingPrice : '0'}">
+            <div class="vehicle-card">
+                <a th:href="@{/vehicles/{slug}(slug=${vehicle.slug})}" style="text-decoration:none;color:inherit">
+                    <img th:if="${not #strings.isEmpty(vehicle.heroImage)}" th:src="${vehicle.heroImage}" th:alt="${vehicle.name}"
+                         onerror="this.style.display='none';this.parentElement.querySelector('.no-img-placeholder').style.display='flex'" loading="lazy">
+                    <img th:if="${#strings.isEmpty(vehicle.heroImage) and not #strings.isEmpty(vehicle.thumbnailImage)}" th:src="${vehicle.thumbnailImage}" th:alt="${vehicle.name}"
+                         onerror="this.style.display='none';this.parentElement.querySelector('.no-img-placeholder').style.display='flex'" loading="lazy">
+                    <div class="no-img-placeholder" th:style="${not #strings.isEmpty(vehicle.heroImage) or not #strings.isEmpty(vehicle.thumbnailImage) ? 'display:none' : ''}"><i class="fas fa-car"></i></div>
+                </a>
+                <div class="card-body">
+                    <h5 style="font-weight:700;font-size:16px;margin-bottom:4px;color:var(--secondary)" th:text="${vehicle.name}">Vehicle</h5>
+                    <p style="font-size:12px;color:#6B7280;margin-bottom:8px;line-height:1.5" th:text="${vehicle.shortDescription != null ? (vehicle.shortDescription.length() > 80 ? vehicle.shortDescription.substring(0,80)+'...' : vehicle.shortDescription) : ''}"></p>
+                    <div class="price mb-2" th:if="${vehicle.startingPrice != null}">
+                        ₹ <span th:text="${#numbers.formatDecimal(vehicle.startingPrice, 1, 0)}"></span>
+                        <span style="font-size:12px;color:#6B7280;font-weight:400"> onwards</span>
+                    </div>
+                    <div class="specs">
+                        <span th:if="${vehicle.fuelType != null}" class="spec-badge"><i class="fas fa-gas-pump me-1"></i><span th:text="${vehicle.fuelType}"></span></span>
+                        <span th:if="${vehicle.transmissionType != null}" class="spec-badge"><i class="fas fa-cog me-1"></i><span th:text="${vehicle.transmissionType}"></span></span>
+                        <span th:if="${vehicle.seatingCapacity != null}" class="spec-badge"><i class="fas fa-users me-1"></i><span th:text="${vehicle.seatingCapacity + ' Seats'}"></span></span>
+                    </div>
+                    <a th:href="@{/vehicles/{slug}(slug=${vehicle.slug})}" class="btn-view mt-3"><i class="fas fa-arrow-right me-1"></i>View Details</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- No vehicles message -->
+    <div th:if="${#lists.isEmpty(vehicles)}" class="no-vehicles">
+        <i class="fas fa-car d-block"></i>
+        <h5 style="color:#6B7280;font-weight:600">No vehicles found for <span th:text="${brandName}"></span></h5>
+        <p style="color:#9CA3AF;font-size:14px">Check back soon for new models</p>
+        <a href="/vehicles" style="color:var(--primary);font-weight:600;text-decoration:none">← Browse All Vehicles</a>
+    </div>
+</div>
+</section>
+
+<!-- Brand Schema Markup -->
+<script type="application/ld+json" th:inline="javascript">
+{
+    "@context": "https://schema.org",
+    "@type": "Brand",
+    "name": /*[[${brandName}]]*/ "",
+    "url": /*[["http://localhost:8080/brand/" + ${brandSlug}]]*/ ""
+}
+</script>
+
+<!-- Footer -->
+<footer style="background:var(--secondary);padding:32px 0;text-align:center">
+    <p style="color:rgba(255,255,255,0.4);font-size:13px;margin:0">&copy; 2024 CarDekho Deals. All rights reserved.</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function filterVehicles() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const fuel = document.getElementById('fuelFilter').value.toLowerCase();
+    const trans = document.getElementById('transFilter').value.toLowerCase();
+    const seats = document.getElementById('seatFilter').value;
+
+    document.querySelectorAll('.vehicle-col').forEach(col => {
+        const name = (col.dataset.name || '').toLowerCase();
+        const vFuel = (col.dataset.fuel || '').toLowerCase();
+        const vTrans = (col.dataset.trans || '').toLowerCase();
+        const vSeats = col.dataset.seats || '';
+
+        let show = true;
+        if (search && !name.includes(search)) show = false;
+        if (fuel && !vFuel.includes(fuel)) show = false;
+        if (trans && !vTrans.includes(trans)) show = false;
+        if (seats && vSeats !== seats) show = false;
+
+        col.style.display = show ? '' : 'none';
+    });
+}
+
+function sortVehicles() {
+    const sortBy = document.getElementById('sortBy').value;
+    const grid = document.getElementById('vehicleGrid');
+    const cols = Array.from(grid.querySelectorAll('.vehicle-col'));
+
+    cols.sort((a, b) => {
+        if (sortBy === 'price-low') return (parseFloat(a.dataset.price) || 999999999) - (parseFloat(b.dataset.price) || 999999999);
+        if (sortBy === 'price-high') return (parseFloat(b.dataset.price) || 0) - (parseFloat(a.dataset.price) || 0);
+        if (sortBy === 'name') return (a.dataset.name || '').localeCompare(b.dataset.name || '');
+        return 0; // latest - keep original order
+    });
+
+    cols.forEach(col => grid.appendChild(col));
+}
+
+function resetFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('fuelFilter').value = '';
+    document.getElementById('transFilter').value = '';
+    document.getElementById('seatFilter').value = '';
+    document.getElementById('sortBy').value = 'name';
+    document.querySelectorAll('.vehicle-col').forEach(col => col.style.display = '');
+}
+
+// Navbar scroll effect
+window.addEventListener('scroll', function() {
+    const nav = document.getElementById('mainNav');
+    if (window.scrollY > 50) nav.classList.add('scrolled');
+    else nav.classList.remove('scrolled');
+});
+</script>
+</body>
+</html>

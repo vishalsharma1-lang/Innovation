@@ -1,0 +1,168 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Vehicle — CarDekho</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/admin.css}" rel="stylesheet">
+    <style>
+        .module-card { border-radius: 12px; border: 1px solid var(--border-color, #E5E7EB); padding: 18px; transition: all .2s; cursor: pointer; background: white; }
+        .module-card:hover { border-color: #FF6B00; box-shadow: 0 4px 12px rgba(255,107,0,0.12); transform: translateY(-2px); }
+        .module-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 17px; margin-bottom: 10px; }
+        .module-count { font-size: 26px; font-weight: 800; color: #111827; letter-spacing: -0.5px; }
+        .module-label { font-size: 11px; color: #6B7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .tab-content { margin-top: 20px; }
+        #vehicleData .table td { font-size: 13px; }
+    </style>
+</head>
+<body>
+<div th:replace="~{admin/fragments/sidebar :: sidebar}"></div>
+<div class="main-content">
+    <div th:replace="~{admin/fragments/sidebar :: topbar('Manage Vehicle')}"></div>
+    <div class="content-area" id="vehicleData" th:attr="data-vehicle-id=${vehicle.id}">
+
+        <!-- Vehicle Header -->
+        <div class="card mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h4 class="mb-1 fw-700" th:text="${vehicle.name}">Vehicle Name</h4>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <span class="badge bg-primary" th:text="${vehicle.brand}"></span>
+                            <span class="badge bg-secondary" th:text="${vehicle.category}"></span>
+                            <span class="badge bg-info" th:text="${vehicle.fuelType}"></span>
+                            <span class="badge" th:classappend="${vehicle.isActive ? 'bg-success' : 'bg-danger'}"
+                                  th:text="${vehicle.isActive ? 'Active' : 'Inactive'}"></span>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a th:href="@{/admin/vehicles/edit/{id}(id=${vehicle.id})}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-edit me-1"></i>Edit
+                        </a>
+                        <a th:href="@{/admin/vehicles}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Back
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Module Stats Grid -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="module-card text-center">
+                    <div class="module-icon mx-auto" style="background:#ede9fe;color:#7c3aed"><i class="fas fa-list"></i></div>
+                    <div class="module-count" th:text="${#lists.size(variants)}">0</div>
+                    <div class="module-label">Variants</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="module-card text-center">
+                    <div class="module-icon mx-auto" style="background:#dbeafe;color:#1d4ed8"><i class="fas fa-cog"></i></div>
+                    <div class="module-count" th:text="${#lists.size(specifications)}">0</div>
+                    <div class="module-label">Specifications</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="module-card text-center">
+                    <div class="module-icon mx-auto" style="background:#d1fae5;color:#065f46"><i class="fas fa-star"></i></div>
+                    <div class="module-count" th:text="${#lists.size(features)}">0</div>
+                    <div class="module-label">Features</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="module-card text-center">
+                    <div class="module-icon mx-auto" style="background:#fce7f3;color:#9d174d"><i class="fas fa-palette"></i></div>
+                    <div class="module-count" th:text="${#lists.size(colors)}">0</div>
+                    <div class="module-label">Colors</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="module-card text-center">
+                    <div class="module-icon mx-auto" style="background:#fef3c7;color:#92400e"><i class="fas fa-images"></i></div>
+                    <div class="module-count" th:text="${#lists.size(images)}">0</div>
+                    <div class="module-label">Images</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="module-card text-center">
+                    <div class="module-icon mx-auto" style="background:#fee2e2;color:#991b1b"><i class="fas fa-video"></i></div>
+                    <div class="module-count" th:text="${#lists.size(videos)}">0</div>
+                    <div class="module-label">Videos</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="module-card text-center">
+                    <div class="module-icon mx-auto" style="background:#e0e7ff;color:#3730a3"><i class="fas fa-file-pdf"></i></div>
+                    <div class="module-count" th:text="${#lists.size(brochures)}">0</div>
+                    <div class="module-label">Brochures</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="module-card text-center">
+                    <div class="module-icon mx-auto" style="background:#cffafe;color:#0e7490"><i class="fas fa-rupee-sign"></i></div>
+                    <div class="module-count" th:text="${#lists.size(prices)}">0</div>
+                    <div class="module-label">Prices</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="module-card text-center">
+                    <div class="module-icon mx-auto" style="background:#fef9c3;color:#a16207"><i class="fas fa-pen-fancy"></i></div>
+                    <div class="module-count" th:text="${#lists.size(expertReviews)}">0</div>
+                    <div class="module-label">Expert Reviews</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="module-card text-center">
+                    <div class="module-icon mx-auto" style="background:#f0fdf4;color:#166534"><i class="fas fa-newspaper"></i></div>
+                    <div class="module-count" th:text="${#lists.size(news)}">0</div>
+                    <div class="module-label">News & Updates</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="module-card text-center">
+                    <div class="module-icon mx-auto" style="background:#fdf2f8;color:#be185d"><i class="fas fa-star-half-alt"></i></div>
+                    <div class="module-count" th:text="${#lists.size(reviews)}">0</div>
+                    <div class="module-label">User Reviews</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Info Card -->
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0 fw-600">REST API Endpoints for this Vehicle</h6></div>
+            <div class="card-body">
+                <p class="text-muted mb-3" style="font-size:13px">Use these endpoints to manage all sub-modules via API (JSON):</p>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead><tr><th>Module</th><th>List / Create</th><th>Update / Delete</th></tr></thead>
+                        <tbody>
+                        <tr><td>Variants</td><td><code th:text="'GET/POST /api/vehicles/' + ${vehicle.id} + '/variants'"></code></td><td><code>PUT/DELETE /api/vehicles/variants/{id}</code></td></tr>
+                        <tr><td>Specs</td><td><code th:text="'GET/POST /api/vehicles/' + ${vehicle.id} + '/specifications'"></code></td><td><code>PUT/DELETE /api/vehicles/specifications/{id}</code></td></tr>
+                        <tr><td>Features</td><td><code th:text="'GET/POST /api/vehicles/' + ${vehicle.id} + '/features'"></code></td><td><code>PUT/DELETE /api/vehicles/features/{id}</code></td></tr>
+                        <tr><td>Colors</td><td><code th:text="'GET/POST /api/vehicles/' + ${vehicle.id} + '/colors'"></code></td><td><code>PUT/DELETE /api/vehicles/colors/{id}</code></td></tr>
+                        <tr><td>Images</td><td><code th:text="'GET/POST /api/vehicles/' + ${vehicle.id} + '/images'"></code></td><td><code>PUT/DELETE /api/vehicles/images/{id}</code></td></tr>
+                        <tr><td>Videos</td><td><code th:text="'GET/POST /api/vehicles/' + ${vehicle.id} + '/videos'"></code></td><td><code>PUT/DELETE /api/vehicles/videos/{id}</code></td></tr>
+                        <tr><td>Brochures</td><td><code th:text="'GET/POST /api/vehicles/' + ${vehicle.id} + '/brochures'"></code></td><td><code>DELETE /api/vehicles/brochures/{id}</code></td></tr>
+                        <tr><td>FAQs</td><td><code th:text="'GET/POST /api/vehicles/' + ${vehicle.id} + '/faqs'"></code></td><td><code>PUT/DELETE /api/vehicles/faqs/{id}</code></td></tr>
+                        <tr><td>Reviews</td><td><code th:text="'GET/POST /api/vehicles/' + ${vehicle.id} + '/reviews'"></code></td><td><code>PUT/DELETE /api/vehicles/reviews/{id}</code></td></tr>
+                        <tr><td>Expert Reviews</td><td><code th:text="'GET/POST /api/vehicles/' + ${vehicle.id} + '/expert-reviews'"></code></td><td><code>PUT/DELETE /api/vehicles/expert-reviews/{id}</code></td></tr>
+                        <tr><td>News & Updates</td><td><code th:text="'GET/POST /api/vehicles/' + ${vehicle.id} + '/news'"></code></td><td><code>PUT/DELETE /api/vehicles/news/{id}</code></td></tr>
+                        <tr><td>Offers</td><td><code th:text="'GET/POST /api/vehicles/' + ${vehicle.id} + '/offers'"></code></td><td><code>PUT/DELETE /api/vehicles/offers/{id}</code></td></tr>
+                        <tr><td>Prices</td><td><code th:text="'GET/POST /api/vehicles/' + ${vehicle.id} + '/prices'"></code></td><td><code>PUT/DELETE /api/vehicles/prices/{id}</code></td></tr>
+                        <tr><td>SEO</td><td><code th:text="'GET/POST /api/vehicles/' + ${vehicle.id} + '/seo'"></code></td><td><code>DELETE /api/vehicles/seo/{id}</code></td></tr>
+                        <tr><td>Full Data</td><td colspan="2"><code th:text="'GET /api/vehicles/' + ${vehicle.id} + '/full'"></code></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/admin.js}"></script>
+</body>
+</html>

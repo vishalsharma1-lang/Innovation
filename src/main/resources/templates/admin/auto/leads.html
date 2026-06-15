@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Leads — CMS</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link th:href="@{/css/admin.css}" rel="stylesheet"></head>
+<body>
+<div th:replace="~{admin/fragments/sidebar :: sidebar}"></div>
+<div class="main-content">
+<div th:replace="~{admin/fragments/sidebar :: topbar('Vehicle Leads')}"></div>
+<div class="content-area">
+    <div th:if="${success}" class="alert alert-success alert-dismissible mb-3"><span th:text="${success}"></span><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    <div id="alertBox"></div>
+
+    <div class="card">
+        <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <h6 class="mb-0 fw-600"><i class="fas fa-phone-alt text-primary me-2"></i>Get Best Price — Leads</h6>
+            <div class="d-flex gap-2">
+                <form th:action="@{/admin/leads}" method="get" class="d-flex gap-2">
+                    <input type="text" name="search" class="form-control form-control-sm" placeholder="Search name/phone/vehicle..." th:value="${search}" style="width:220px">
+                    <button class="btn btn-sm btn-outline-secondary"><i class="fas fa-search"></i></button>
+                </form>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table">
+                <thead><tr><th>#</th><th>Name</th><th>Mobile</th><th>Email</th><th>Vehicle</th><th>City</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+                <tbody>
+                <tr th:each="l, stat : ${leads.content}">
+                    <td th:text="${stat.index + 1}"></td>
+                    <td class="fw-500" th:text="${l.name}"></td>
+                    <td><a th:href="'tel:' + ${l.mobile}" th:text="${l.mobile}" style="color:#FF6B00;font-weight:600"></a></td>
+                    <td style="font-size:12px" th:text="${l.email}"></td>
+                    <td><span class="badge bg-light text-dark" th:text="${l.vehicleName}"></span></td>
+                    <td th:text="${l.city}"></td>
+                    <td>
+                        <span class="badge rounded-pill"
+                              th:classappend="${l.contactStatus == 'new' ? 'bg-primary' : (l.contactStatus == 'contacted' ? 'bg-info' : (l.contactStatus == 'converted' ? 'badge-active' : 'bg-secondary'))}"
+                              th:text="${l.contactStatus}"></span>
+                    </td>
+                    <td style="font-size:11px;color:#6c757d" th:text="${l.createdAt != null ? #temporals.format(l.createdAt, 'MMM dd, HH:mm') : '-'}"></td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-sm btn-outline-success btn-sms" title="Send SMS"
+                                    th:data-id="${l.id}" th:data-mobile="${l.mobile}" th:data-vehicle="${l.vehicleName}">
+                                <i class="fas fa-sms"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary btn-call" title="Trigger Call"
+                                    th:data-id="${l.id}" th:data-mobile="${l.mobile}" th:data-name="${l.name}">
+                                <i class="fas fa-phone"></i>
+                            </button>
+                            <a th:href="'https://wa.me/91' + ${l.mobile}" target="_blank"
+                               class="btn btn-sm btn-outline-success" title="WhatsApp">
+                                <i class="fab fa-whatsapp"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-info btn-status" title="Mark Contacted"
+                                    th:data-id="${l.id}" data-status="contacted">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-warning btn-status" title="Mark Converted"
+                                    th:data-id="${l.id}" data-status="converted">
+                                <i class="fas fa-star"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${leads.totalElements == 0}"><td colspan="9" class="text-center text-muted py-4">
+                    <i class="fas fa-inbox fa-2x mb-2 d-block"></i>No leads yet.
+                </td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer d-flex align-items-center justify-content-between" th:if="${leads.totalElements > 0}">
+            <span class="text-muted" style="font-size:12px">Total: <strong th:text="${leads.totalElements}"></strong> leads</span>
+            <a href="/api/quote/leads/export" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="fas fa-download me-1"></i>Export</a>
+        </div>
+    </div>
+</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function showAlert(type, msg) {
+    document.getElementById('alertBox').innerHTML = '<div class="alert alert-'+type+' alert-dismissible mb-3"><i class="fas fa-'+(type==='success'?'check-circle':'info-circle')+' me-2"></i>'+msg+'<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+}
+
+document.querySelectorAll('.btn-sms').forEach(btn => {
+    btn.addEventListener('click', async function() {
+        const id = this.dataset.id;
+        const mobile = this.dataset.mobile;
+        if (!confirm('Send SMS to ' + mobile + '?')) return;
+        const r = await fetch('/api/quote/leads/' + id + '/sms', { method: 'POST' });
+        const data = await r.json();
+        if (data.sent) showAlert('success', 'SMS sent to ' + mobile);
+        else showAlert('info', 'SMS logged (configure provider). Message: ' + data.message);
+    });
+});
+
+document.querySelectorAll('.btn-call').forEach(btn => {
+    btn.addEventListener('click', async function() {
+        const id = this.dataset.id;
+        const name = this.dataset.name;
+        if (!confirm('Trigger call to ' + name + '?')) return;
+        const r = await fetch('/api/quote/leads/' + id + '/call', { method: 'POST' });
+        const data = await r.json();
+        showAlert('info', 'Call ' + data.status + ': ' + data.message);
+    });
+});
+
+document.querySelectorAll('.btn-status').forEach(btn => {
+    btn.addEventListener('click', async function() {
+        const id = this.dataset.id;
+        const status = this.dataset.status;
+        await fetch('/api/quote/leads/' + id + '/status', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contactStatus: status })
+        });
+        showAlert('success', 'Status updated to "' + status + '"');
+        setTimeout(() => location.reload(), 1000);
+    });
+});
+</script>
+</body></html>

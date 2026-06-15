@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- SIDEBAR FRAGMENT -->
+<nav th:fragment="sidebar" class="sidebar">
+    <div class="sidebar-brand">
+        <div style="display:flex;align-items:center">
+            <div class="brand-icon"><i class="fas fa-car"></i></div>
+            <div>
+                <span>CarDekho</span>
+            </div>
+        </div>
+        <small style="display:block;color:rgba(255,255,255,0.4);font-size:11px;padding-left:0;margin-top:6px;font-weight:400">Automotive Admin Panel</small>
+    </div>
+
+    <div class="sidebar-nav">
+        <div class="nav-section-title">Overview</div>
+        <a th:href="@{/admin/dashboard}"
+           th:classappend="${currentUri != null && #strings.contains(currentUri, '/dashboard')} ? ' active' : ''">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+        </a>
+
+        <div class="nav-section-title">Sales &amp; Leads</div>
+        <a th:href="@{/admin/leads}"
+           th:classappend="${currentUri != null && #strings.contains(currentUri, '/leads')} ? ' active' : ''">
+            <i class="fas fa-phone-alt"></i> Lead Management
+        </a>
+        <a th:href="@{/admin/dealers}"
+           th:classappend="${currentUri != null && #strings.contains(currentUri, '/dealers')} ? ' active' : ''">
+            <i class="fas fa-store"></i> Dealer Management
+        </a>
+        <a th:href="@{/admin/deals}"
+           th:classappend="${currentUri != null && #strings.contains(currentUri, '/deals')} ? ' active' : ''">
+            <i class="fas fa-tags"></i> Deal Management
+        </a>
+
+        <div class="nav-section-title">Inventory</div>
+        <a th:href="@{/admin/vehicles}"
+           th:classappend="${currentUri != null && #strings.contains(currentUri, '/vehicles') && !#strings.contains(currentUri, '/import')} ? ' active' : ''">
+            <i class="fas fa-car"></i> Vehicle Inventory
+        </a>
+        <a th:href="@{/admin/vehicles/import}"
+           th:classappend="${currentUri != null && #strings.contains(currentUri, '/import')} ? ' active' : ''">
+            <i class="fas fa-cloud-download-alt"></i> Import Vehicle
+        </a>
+
+        <div class="nav-section-title">Content</div>
+        <a th:href="@{/admin/pages}"
+           th:classappend="${currentUri != null && #strings.contains(currentUri, '/pages')} ? ' active' : ''">
+            <i class="fas fa-copy"></i> Pages &amp; Sections
+        </a>
+        <a th:href="@{/admin/banners}"
+           th:classappend="${currentUri != null && #strings.contains(currentUri, '/banners')} ? ' active' : ''">
+            <i class="fas fa-images"></i> Banner Management
+        </a>
+        <a th:href="@{/admin/images}"
+           th:classappend="${currentUri != null && #strings.contains(currentUri, '/images')} ? ' active' : ''">
+            <i class="fas fa-photo-video"></i> Media Library
+        </a>
+        <a th:href="@{/admin/content}"
+           th:classappend="${currentUri != null && #strings.contains(currentUri, '/content')} ? ' active' : ''">
+            <i class="fas fa-file-alt"></i> Content Sections
+        </a>
+
+        <div class="nav-section-title">Analytics</div>
+        <a th:href="@{/admin/analytics/overview}"
+           th:classappend="${currentUri != null && #strings.contains(currentUri, '/analytics/overview')} ? ' active' : ''">
+            <i class="fas fa-chart-line"></i> Overview
+        </a>
+        <a th:href="@{/admin/analytics/deals}"
+           th:classappend="${currentUri != null && #strings.contains(currentUri, '/analytics/deals')} ? ' active' : ''">
+            <i class="fas fa-tags"></i> Deal Analytics
+        </a>
+        <a th:href="@{/admin/analytics/vehicles}"
+           th:classappend="${currentUri != null && #strings.contains(currentUri, '/analytics/vehicles')} ? ' active' : ''">
+            <i class="fas fa-car"></i> Vehicle Analytics
+        </a>
+        <a th:href="@{/admin/analytics/funnel}"
+           th:classappend="${currentUri != null && #strings.contains(currentUri, '/analytics/funnel')} ? ' active' : ''">
+            <i class="fas fa-filter"></i> Funnel Analysis
+        </a>
+        <a th:href="@{/admin/analytics/search}"
+           th:classappend="${currentUri != null && #strings.contains(currentUri, '/analytics/search')} ? ' active' : ''">
+            <i class="fas fa-search"></i> Search Analytics
+        </a>
+
+        <div class="nav-section-title">Marketing &amp; SEO</div>
+        <a th:href="@{/admin/seo}"
+           th:classappend="${currentUri != null && #strings.contains(currentUri, '/seo')} ? ' active' : ''">
+            <i class="fas fa-search"></i> SEO Management
+        </a>
+
+        <div class="nav-section-title">Administration</div>
+        <a th:href="@{/admin/settings}"
+           th:classappend="${currentUri != null && #strings.contains(currentUri, '/settings')} ? ' active' : ''">
+            <i class="fas fa-cog"></i> System Settings
+        </a>
+        <a href="/" target="_blank">
+            <i class="fas fa-external-link-alt"></i> View Website
+        </a>
+    </div>
+
+    <div class="sidebar-footer">
+        <a th:href="@{/admin/logout}">
+            <i class="fas fa-sign-out-alt"></i> Sign Out
+        </a>
+    </div>
+</nav>
+
+<!-- TOPBAR FRAGMENT -->
+<div th:fragment="topbar(pageTitle)" class="topbar">
+    <h1 class="page-title" th:text="${pageTitle}">Dashboard</h1>
+    <div class="topbar-right">
+        <a href="/" target="_blank" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-globe me-1"></i>View Site
+        </a>
+        <div class="user-badge">
+            <div class="user-avatar">A</div>
+            <span style="font-size:13px;color:#374151;font-weight:600">Admin</span>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
