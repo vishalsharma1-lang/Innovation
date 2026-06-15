@@ -1,9 +1,7 @@
-services:
+﻿services:
   - type: web
     name: kiro
-    runtime: java
-    buildCommand: mvn package -DskipTests -q
-    startCommand: java -Dspring.profiles.active=render -jar target/cms-seo-manager-1.0.0.jar
+    runtime: docker
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: render
