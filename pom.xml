@@ -98,6 +98,13 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- PostgreSQL driver (for Render.com deployment) -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- Jsoup HTML Parser (for vehicle import from URL) -->
         <dependency>
             <groupId>org.jsoup</groupId>
