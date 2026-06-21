@@ -1,154 +1,227 @@
-﻿<!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard — CarDekho</title>
+    <title>Dashboard — Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link th:href="@{/css/admin.css}" rel="stylesheet">
+    <style>
+        .dash-stat {
+            background:#fff; border-radius:16px; padding:20px 22px;
+            border:1.5px solid #f1f5f9; box-shadow:0 2px 12px rgba(0,0,0,.05);
+            transition:transform .18s,box-shadow .18s; position:relative; overflow:hidden;
+        }
+        .dash-stat:hover { transform:translateY(-3px); box-shadow:0 8px 28px rgba(0,0,0,.1); }
+        .dash-stat::after {
+            content:''; position:absolute; bottom:-20px; right:-20px;
+            width:80px; height:80px; border-radius:50%; opacity:.07;
+        }
+        .ds-icon {
+            width:46px; height:46px; border-radius:12px;
+            display:flex; align-items:center; justify-content:center; font-size:20px; margin-bottom:14px;
+        }
+        .ds-num { font-size:32px; font-weight:900; color:#0f172a; line-height:1; margin-bottom:4px; }
+        .ds-label { font-size:12px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.5px; }
+        .ds-link { font-size:12px; color:#0059A8; text-decoration:none; font-weight:600; margin-top:10px; display:inline-block; }
+        .ds-link:hover { color:#EF4A23; }
+        .ds-delta { font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; margin-top:8px; display:inline-block; }
+
+        .quick-action-card {
+            background:#fff; border:1.5px solid #e2e8f0; border-radius:14px;
+            padding:16px 18px; display:flex; align-items:center; gap:12px;
+            text-decoration:none; color:inherit; transition:all .15s;
+        }
+        .quick-action-card:hover { border-color:#EF4A23; box-shadow:0 4px 16px rgba(239,74,35,.12); transform:translateY(-2px); color:inherit; }
+        .qa-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+        .qa-title { font-size:14px; font-weight:700; color:#0f172a; }
+        .qa-sub   { font-size:11px; color:#94a3b8; margin-top:1px; }
+
+        .activity-row { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid #f1f5f9; }
+        .activity-row:last-child { border-bottom:none; }
+        .activity-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+        .progress-thin { height:5px; border-radius:3px; background:#f1f5f9; }
+        .progress-thin .progress-bar { border-radius:3px; }
+    </style>
 </head>
 <body>
-
 <div th:replace="~{admin/fragments/sidebar :: sidebar}"></div>
-
 <div class="main-content">
     <div th:replace="~{admin/fragments/sidebar :: topbar('Dashboard')}"></div>
-
     <div class="content-area">
 
-        <div th:if="${success}" class="alert alert-success alert-dismissible mb-4" role="alert">
+        <div th:if="${success}" class="alert alert-success alert-dismissible mb-4">
             <i class="fas fa-check-circle me-2"></i><span th:text="${success}"></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-        <div th:if="${error}" class="alert alert-danger alert-dismissible mb-4" role="alert">
+        <div th:if="${error}" class="alert alert-danger alert-dismissible mb-4">
             <i class="fas fa-exclamation-circle me-2"></i><span th:text="${error}"></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button class="btn-close" data-bs-dismiss="alert"></button>
         </div>
 
-        <!-- Stat Cards -->
+        <!-- Welcome bar -->
+        <div style="background:linear-gradient(135deg,#0f172a,#1e3a5f);border-radius:16px;padding:22px 28px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+            <div>
+                <div style="color:rgba(255,255,255,.6);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Welcome back</div>
+                <div style="color:#fff;font-size:22px;font-weight:800;margin-top:4px">Admin Dashboard</div>
+                <div style="color:rgba(255,255,255,.5);font-size:12px;margin-top:2px" id="dashDate"></div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <a href="/" target="_blank" style="background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;text-decoration:none">
+                    <i class="fas fa-external-link-alt me-1"></i>View Website
+                </a>
+                <a th:href="@{/admin/vehicles}" style="background:#EF4A23;color:#fff;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;text-decoration:none">
+                    <i class="fas fa-plus me-1"></i>Add Vehicle
+                </a>
+            </div>
+        </div>
+
+        <!-- ── STAT CARDS ── -->
         <div class="row g-3 mb-4">
-            <div class="col-sm-6 col-xl-3">
-                <div class="stat-card">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <div class="stat-label">SEO Settings</div>
-                            <div class="stat-number" th:text="${totalSeo}">0</div>
-                            <a th:href="@{/admin/seo}" class="stat-link">Manage SEO →</a>
-                        </div>
-                        <div class="stat-icon" style="background:#ede9fe;color:#7c3aed">
-                            <i class="fas fa-search"></i>
-                        </div>
-                    </div>
+
+            <div class="col-6 col-xl-2">
+                <div class="dash-stat" style="border-top:3px solid #0059A8">
+                    <div class="ds-icon" style="background:#dbeafe;color:#1d4ed8"><i class="fas fa-car"></i></div>
+                    <div class="ds-num" th:text="${totalVehicles}">0</div>
+                    <div class="ds-label">New Vehicles</div>
+                    <a th:href="@{/admin/vehicles}" class="ds-link">Manage →</a>
                 </div>
             </div>
-            <div class="col-sm-6 col-xl-3">
-                <div class="stat-card">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <div class="stat-label">Content Blocks</div>
-                            <div class="stat-number" th:text="${totalContent}">0</div>
-                            <a th:href="@{/admin/content}" class="stat-link">Manage Content →</a>
-                        </div>
-                        <div class="stat-icon" style="background:#dbeafe;color:#1d4ed8">
-                            <i class="fas fa-file-alt"></i>
-                        </div>
-                    </div>
+
+            <div class="col-6 col-xl-2">
+                <div class="dash-stat" style="border-top:3px solid #FF6B00">
+                    <div class="ds-icon" style="background:#fff3eb;color:#FF6B00"><i class="fas fa-recycle"></i></div>
+                    <div class="ds-num" th:text="${totalUsedCars}">0</div>
+                    <div class="ds-label">Used Cars</div>
+                    <a th:href="@{/admin/vehicles}" class="ds-link">Manage →</a>
                 </div>
             </div>
-            <div class="col-sm-6 col-xl-3">
-                <div class="stat-card">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <div class="stat-label">Images</div>
-                            <div class="stat-number" th:text="${totalImages}">0</div>
-                            <a th:href="@{/admin/images}" class="stat-link">Manage Images →</a>
-                        </div>
-                        <div class="stat-icon" style="background:#fce7f3;color:#9d174d">
-                            <i class="fas fa-images"></i>
-                        </div>
-                    </div>
+
+            <div class="col-6 col-xl-2">
+                <div class="dash-stat" style="border-top:3px solid #16a34a">
+                    <div class="ds-icon" style="background:#dcfce7;color:#16a34a"><i class="fas fa-tags"></i></div>
+                    <div class="ds-num" th:text="${activeDeals}">0</div>
+                    <div class="ds-label">New Car Deals</div>
+                    <a th:href="@{/admin/deals}" class="ds-link">Manage →</a>
                 </div>
             </div>
-            <div class="col-sm-6 col-xl-3">
-                <div class="stat-card">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <div class="stat-label">Banners</div>
-                            <div class="stat-number" th:text="${totalBanners}">0</div>
-                            <a th:href="@{/admin/banners}" class="stat-link">Manage Banners →</a>
-                        </div>
-                        <div class="stat-icon" style="background:#d1fae5;color:#065f46">
-                            <i class="fas fa-photo-video"></i>
-                        </div>
-                    </div>
+
+            <div class="col-6 col-xl-2">
+                <div class="dash-stat" style="border-top:3px solid #7c3aed">
+                    <div class="ds-icon" style="background:#ede9fe;color:#7c3aed"><i class="fas fa-handshake"></i></div>
+                    <div class="ds-num" th:text="${activeUsedDeals}">0</div>
+                    <div class="ds-label">Used Car Deals</div>
+                    <a th:href="@{/admin/deals}" class="ds-link">Manage →</a>
                 </div>
+            </div>
+
+            <div class="col-6 col-xl-2">
+                <div class="dash-stat" style="border-top:3px solid #EF4A23">
+                    <div class="ds-icon" style="background:#fff0ed;color:#EF4A23"><i class="fas fa-users"></i></div>
+                    <div class="ds-num" th:text="${totalLeads}">0</div>
+                    <div class="ds-label">Total Leads</div>
+                    <a th:href="@{/admin/leads}" class="ds-link">View →</a>
+                </div>
+            </div>
+
+            <div class="col-6 col-xl-2">
+                <div class="dash-stat" style="border-top:3px solid #0891b2">
+                    <div class="ds-icon" style="background:#cffafe;color:#0891b2"><i class="fas fa-file-alt"></i></div>
+                    <div class="ds-num" th:text="${totalContent}">0</div>
+                    <div class="ds-label">Content Blocks</div>
+                    <a th:href="@{/admin/content}" class="ds-link">Edit →</a>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ── QUICK ACTIONS ── -->
+        <h6 style="font-weight:800;color:#0f172a;margin-bottom:12px;font-size:14px;text-transform:uppercase;letter-spacing:.4px">Quick Actions</h6>
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-4 col-lg-2">
+                <a th:href="@{/admin/vehicles/new}" class="quick-action-card">
+                    <div class="qa-icon" style="background:#dbeafe;color:#1d4ed8"><i class="fas fa-car-side"></i></div>
+                    <div><div class="qa-title">Add Vehicle</div><div class="qa-sub">New / Used</div></div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a th:href="@{/admin/deals}" class="quick-action-card">
+                    <div class="qa-icon" style="background:#dcfce7;color:#16a34a"><i class="fas fa-tags"></i></div>
+                    <div><div class="qa-title">Create Deal</div><div class="qa-sub">Offers &amp; discounts</div></div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a th:href="@{/admin/leads}" class="quick-action-card">
+                    <div class="qa-icon" style="background:#fff0ed;color:#EF4A23"><i class="fas fa-phone"></i></div>
+                    <div><div class="qa-title">View Leads</div><div class="qa-sub">Enquiries</div></div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a th:href="@{/admin/seo/new}" class="quick-action-card">
+                    <div class="qa-icon" style="background:#ede9fe;color:#7c3aed"><i class="fas fa-search"></i></div>
+                    <div><div class="qa-title">Add SEO</div><div class="qa-sub">Page settings</div></div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a th:href="@{/admin/banners/new}" class="quick-action-card">
+                    <div class="qa-icon" style="background:#fce7f3;color:#9d174d"><i class="fas fa-photo-video"></i></div>
+                    <div><div class="qa-title">Add Banner</div><div class="qa-sub">Homepage hero</div></div>
+                </a>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a th:href="@{/admin/used-car/extractor}" class="quick-action-card">
+                    <div class="qa-icon" style="background:#fff3eb;color:#FF6B00"><i class="fas fa-download"></i></div>
+                    <div><div class="qa-title">Fetch Used Car</div><div class="qa-sub">From URL</div></div>
+                </a>
             </div>
         </div>
 
-        <!-- Quick Actions -->
-        <div class="card mb-4">
-            <div class="card-header"><h6 class="mb-0 fw-600">Quick Actions</h6></div>
-            <div class="card-body">
-                <div class="d-flex gap-2 flex-wrap">
-                    <a th:href="@{/admin/seo/new}" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus me-1"></i>Add SEO Page
-                    </a>
-                    <a th:href="@{/admin/content/new}" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus me-1"></i>Add Content Block
-                    </a>
-                    <a th:href="@{/admin/banners/new}" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus me-1"></i>Add Banner
-                    </a>
-                    <a th:href="@{/admin/images/upload}" class="btn btn-primary btn-sm">
-                        <i class="fas fa-upload me-1"></i>Upload Image
-                    </a>
-                    <a href="/" target="_blank" class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-external-link-alt me-1"></i>Preview Website
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Recent tables -->
+        <!-- ── LOWER ROW: Summary tables ── -->
         <div class="row g-3">
+
+            <!-- Content overview -->
             <div class="col-lg-6">
                 <div class="card">
                     <div class="card-header d-flex align-items-center justify-content-between">
-                        <h6 class="mb-0 fw-600">Recent Content Updates</h6>
-                        <a th:href="@{/admin/content}" class="text-primary" style="font-size:12px;text-decoration:none">View all</a>
+                        <h6 class="mb-0 fw-600"><i class="fas fa-file-alt me-2" style="color:#0891b2"></i>Recent Content Updates</h6>
+                        <a th:href="@{/admin/content}" style="font-size:12px;color:#0059A8;text-decoration:none;font-weight:600">View all →</a>
                     </div>
                     <div class="table-responsive">
-                        <table class="table">
+                        <table class="table table-sm mb-0">
                             <thead><tr><th>Page</th><th>Section</th><th>Heading</th></tr></thead>
                             <tbody>
                             <tr th:each="c : ${recentContent}">
                                 <td><span class="badge bg-light text-dark" th:text="${c.pageName}"></span></td>
-                                <td th:text="${c.sectionName}"></td>
-                                <td th:text="${#strings.abbreviate(c.heading != null ? c.heading : '-', 30)}"></td>
+                                <td th:text="${c.sectionName}" style="font-size:13px"></td>
+                                <td th:text="${#strings.abbreviate(c.heading != null ? c.heading : '-', 28)}" style="font-size:13px"></td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(recentContent)}">
-                                <td colspan="3" class="text-center text-muted py-3">No content yet</td>
+                                <td colspan="3" class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox me-1"></i>No content yet
+                                </td>
                             </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
+
+            <!-- Banner overview -->
             <div class="col-lg-6">
                 <div class="card">
                     <div class="card-header d-flex align-items-center justify-content-between">
-                        <h6 class="mb-0 fw-600">Recent Banners</h6>
-                        <a th:href="@{/admin/banners}" class="text-primary" style="font-size:12px;text-decoration:none">View all</a>
+                        <h6 class="mb-0 fw-600"><i class="fas fa-photo-video me-2" style="color:#9d174d"></i>Recent Banners</h6>
+                        <a th:href="@{/admin/banners}" style="font-size:12px;color:#0059A8;text-decoration:none;font-weight:600">View all →</a>
                     </div>
                     <div class="table-responsive">
-                        <table class="table">
+                        <table class="table table-sm mb-0">
                             <thead><tr><th>Page</th><th>Title</th><th>Status</th></tr></thead>
                             <tbody>
                             <tr th:each="b : ${recentBanners}">
                                 <td><span class="badge bg-light text-dark" th:text="${b.pageName}"></span></td>
-                                <td th:text="${#strings.abbreviate(b.bannerTitle != null ? b.bannerTitle : '-', 28)}"></td>
+                                <td th:text="${#strings.abbreviate(b.bannerTitle != null ? b.bannerTitle : '-', 26)}" style="font-size:13px"></td>
                                 <td>
                                     <span class="badge rounded-pill"
                                           th:classappend="${b.isActive ? 'badge-active' : 'badge-inactive'}"
@@ -156,19 +229,108 @@
                                 </td>
                             </tr>
                             <tr th:if="${#lists.isEmpty(recentBanners)}">
-                                <td colspan="3" class="text-center text-muted py-3">No banners yet</td>
+                                <td colspan="3" class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox me-1"></i>No banners yet
+                                </td>
                             </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
-        </div>
 
+            <!-- Inventory summary -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0 fw-600"><i class="fas fa-chart-bar me-2" style="color:#EF4A23"></i>Inventory Overview</h6>
+                    </div>
+                    <div class="card-body">
+                        <div style="margin-bottom:16px">
+                            <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:6px">
+                                <span><i class="fas fa-car me-1" style="color:#1d4ed8"></i>New Vehicles</span>
+                                <span th:text="${totalVehicles}">0</span>
+                            </div>
+                            <div class="progress-thin"><div class="progress-bar" style="background:#1d4ed8"
+                                th:style="'width:' + (${totalVehicles != null and totalVehicles > 0} ? '70' : '0') + '%'"></div></div>
+                        </div>
+                        <div style="margin-bottom:16px">
+                            <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:6px">
+                                <span><i class="fas fa-recycle me-1" style="color:#FF6B00"></i>Used Cars</span>
+                                <span th:text="${totalUsedCars ?: 0}">0</span>
+                            </div>
+                            <div class="progress-thin"><div class="progress-bar" style="background:#FF6B00"
+                                th:style="'width:' + (${totalUsedCars != null and totalUsedCars > 0} ? '45' : '0') + '%'"></div></div>
+                        </div>
+                        <div style="margin-bottom:16px">
+                            <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:6px">
+                                <span><i class="fas fa-tags me-1" style="color:#16a34a"></i>New Car Deals</span>
+                                <span th:text="${activeDeals ?: 0}">0</span>
+                            </div>
+                            <div class="progress-thin"><div class="progress-bar" style="background:#16a34a"
+                                th:style="'width:' + (${activeDeals != null and activeDeals > 0} ? '55' : '0') + '%'"></div></div>
+                        </div>
+                        <div>
+                            <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:6px">
+                                <span><i class="fas fa-handshake me-1" style="color:#7c3aed"></i>Used Car Deals</span>
+                                <span th:text="${activeUsedDeals ?: 0}">0</span>
+                            </div>
+                            <div class="progress-thin"><div class="progress-bar" style="background:#7c3aed"
+                                th:style="'width:' + (${activeUsedDeals != null and activeUsedDeals > 0} ? '30' : '0') + '%'"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System health -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0 fw-600"><i class="fas fa-heartbeat me-2" style="color:#16a34a"></i>System Health</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="activity-row px-3">
+                            <div class="activity-dot" style="background:#16a34a"></div>
+                            <div style="flex:1;font-size:13px;font-weight:600">Database</div>
+                            <span class="badge" style="background:#dcfce7;color:#15803d;font-size:11px">Connected</span>
+                        </div>
+                        <div class="activity-row px-3">
+                            <div class="activity-dot" style="background:#16a34a"></div>
+                            <div style="flex:1;font-size:13px;font-weight:600">SEO Management</div>
+                            <span style="font-size:12px;color:#64748b" th:text="${totalSeo} + ' pages configured'"></span>
+                        </div>
+                        <div class="activity-row px-3">
+                            <div class="activity-dot" style="background:#16a34a"></div>
+                            <div style="flex:1;font-size:13px;font-weight:600">Image Library</div>
+                            <span style="font-size:12px;color:#64748b" th:text="${totalImages} + ' images'"></span>
+                        </div>
+                        <div class="activity-row px-3">
+                            <div class="activity-dot" style="background:#16a34a"></div>
+                            <div style="flex:1;font-size:13px;font-weight:600">Banners</div>
+                            <span style="font-size:12px;color:#64748b" th:text="${totalBanners} + ' configured'"></span>
+                        </div>
+                        <div class="activity-row px-3">
+                            <div class="activity-dot" style="background:#16a34a"></div>
+                            <div style="flex:1;font-size:13px;font-weight:600">Lead Pipeline</div>
+                            <span style="font-size:12px;color:#64748b" th:text="${totalLeads} + ' total leads'"></span>
+                        </div>
+                        <div class="activity-row px-3">
+                            <div class="activity-dot" style="background:#16a34a"></div>
+                            <div style="flex:1;font-size:13px;font-weight:600">Website</div>
+                            <a href="/" target="_blank" style="font-size:12px;color:#0059A8;text-decoration:none;font-weight:600">Live ↗</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script th:src="@{/js/admin.js}"></script>
+<script>
+document.getElementById('dashDate').textContent = new Date().toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+</script>
 </body>
 </html>

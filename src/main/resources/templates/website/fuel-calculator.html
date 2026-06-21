@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fuel Cost Calculator India 2025 — Petrol, Diesel, CNG, EV Running Cost</title>
+  <meta name="description" content="Free fuel cost calculator for India. Calculate petrol, diesel, CNG and EV running costs. Compare fuel prices across Delhi, Mumbai, Bangalore, Hyderabad and 10 cities." />
+  <meta name="keywords" content="fuel cost calculator, petrol calculator India, diesel running cost, CNG cost, EV running cost, fuel price today" />
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"WebApplication","name":"Smart Fuel Cost Calculator","description":"Calculate petrol, diesel, CNG and EV vehicle running costs for Indian cities","applicationCategory":"FinanceApplication","offers":{"@type":"Offer","price":"0","priceCurrency":"INR"}}
+  </script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <link th:href="@{/css/website.css}" rel="stylesheet">
+  <link th:href="@{/css/fuel-calculator.css}" rel="stylesheet" />
+  <style>
+    /* Offset for fixed navbar (top-bar 33px + navbar ~56px) */
+    .fc-page-wrap { margin-top: 89px; }
+    .fc-breadcrumb {
+      background: #fff;
+      border-bottom: 1px solid #dee2e6;
+      padding: 0 20px;
+    }
+    .fc-breadcrumb-inner {
+      max-width: 1200px; margin: 0 auto;
+      display: flex; align-items: center;
+      height: 36px; gap: 6px;
+      font-size: 12px; color: #868e96;
+    }
+    .fc-breadcrumb-inner a { color: #868e96; text-decoration: none; }
+    .fc-breadcrumb-inner a:hover { color: #EF4A23; }
+    .fc-breadcrumb-inner .sep { color: #dee2e6; }
+    .fc-breadcrumb-inner .current { color: #495057; font-weight: 500; }
+    .city-bar {
+      background: #fff;
+      border-bottom: 1px solid #dee2e6;
+      padding: 8px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: #495057;
+    }
+    .city-bar i { color: #EF4A23; }
+    .city-bar select {
+      border: 1.5px solid #dee2e6; border-radius: 6px;
+      padding: 5px 10px; font-size: 13px;
+      font-family: inherit; cursor: pointer; outline: none;
+      background: #f4f6f8; color: #212529;
+    }
+    .city-bar select:focus { border-color: #EF4A23; }
+  </style>
+</head>
+<body>
+
+<!-- CarDekho Deals navbar -->
+<div th:replace="~{website/fragments/layout :: nav('fuel-calculator')}"></div>
+
+<div class="fc-page-wrap">
+
+  <!-- Breadcrumb -->
+  <div class="fc-breadcrumb">
+    <div class="fc-breadcrumb-inner">
+      <a href="/">Home</a><span class="sep">›</span>
+      <a href="/vehicles">Cars</a><span class="sep">›</span>
+      <span class="current">Fuel Cost Calculator</span>
+    </div>
+  </div>
+
+  <!-- ══ HERO ═════════════════════════════════════════════════ -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-left">
+        <h1>Fuel Cost <span>Calculator</span> India</h1>
+        <p>Compare Petrol, Diesel, CNG &amp; EV running costs for your city · Updated June 2025</p>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="num" id="totalUses">0</div>
+          <div class="lbl">Calculations</div>
+        </div>
+        <div class="hero-stat">
+          <div class="num">10</div>
+          <div class="lbl">Cities</div>
+        </div>
+        <div class="hero-stat">
+          <div class="num">4</div>
+          <div class="lbl">Fuel Types</div>
+        </div>
+        <div class="hero-stat">
+          <div class="num" id="topCity">Delhi</div>
+          <div class="lbl">Top City</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ PAGE CONTENT ══════════════════════════════════════════ -->
+  <div class="page-wrap" id="calculator">
+
+    <!-- VEHICLE PREFILL BANNER -->
+    <div class="vehicle-prefill" id="vehiclePrefill">
+      <i class="fas fa-car"></i>
+      <span>Showing fuel cost for <strong class="vn">Vehicle</strong> — you can adjust values below</span>
+    </div>
+
+    <!-- LIVE PRICE BAR -->
+    <div class="price-live-bar">
+      <div class="plb-title"><span class="plb-dot"></span> Live Prices · <span id="lbCity">Delhi</span></div>
+      <div class="plb-items">
+        <div class="plb-item petrol"><i class="fas fa-gas-pump"></i><span class="lbl">Petrol</span><span class="val" id="lbPetrol">₹94.72/L</span></div>
+        <div class="plb-item diesel"><i class="fas fa-gas-pump"></i><span class="lbl">Diesel</span><span class="val" id="lbDiesel">₹87.62/L</span></div>
+        <div class="plb-item cng"   ><i class="fas fa-wind"></i>    <span class="lbl">CNG</span>   <span class="val" id="lbCng">₹75.09/Kg</span></div>
+        <div class="plb-item ev"    ><i class="fas fa-bolt"></i>    <span class="lbl">Electricity</span><span class="val" id="lbEv">₹8.00/kWh</span></div>
+      </div>
+      <span class="plb-updated"><i class="fas fa-clock"></i> Updated: June 2025</span>
+    </div>
+
+    <!-- INPUTS CARD -->
+    <div class="inputs-card">
+      <div class="inputs-row">
+        <div class="input-group" style="min-width:160px">
+          <label id="distLabel">Monthly Distance (KM)</label>
+          <input type="number" id="distInput" class="inp" value="1500" min="1" placeholder="e.g. 1500" />
+          <span class="error-msg" id="distError">Please enter a valid distance</span>
+        </div>
+        <div class="input-group" style="flex:0;min-width:auto">
+          <label>Time Period</label>
+          <div class="toggle-group">
+            <button class="toggle-btn period-btn" data-period="day">Day</button>
+            <button class="toggle-btn period-btn active" data-period="month">Month</button>
+            <button class="toggle-btn period-btn" data-period="year">Year</button>
+          </div>
+        </div>
+        <div class="input-group" style="flex:0;min-width:auto">
+          <label>Unit</label>
+          <div class="toggle-group">
+            <button class="toggle-btn unit-btn active" data-unit="km">KM</button>
+            <button class="toggle-btn unit-btn" data-unit="miles">Miles</button>
+          </div>
+        </div>
+        <div class="input-group" style="flex:0;min-width:auto">
+          <label style="opacity:0">_</label>
+          <div class="calc-btn-wrap">
+            <button class="calc-btn" id="calcBtn"><i class="fas fa-calculator"></i> Calculate</button>
+            <button class="reset-link" id="resetBtn"><i class="fas fa-redo"></i> Reset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SAVINGS BANNER -->
+    <div class="savings-banner" id="savingsBanner">
+      <i class="fas fa-piggy-bank"></i>
+      <div class="savings-banner-content">
+        <h3>💰 Switching Saves You</h3>
+        <p id="savingsText"></p>
+      </div>
+    </div>
+
+    <!-- ══ FUEL CARDS ══ -->
+    <div id="resultsAnchor"></div>
+    <div class="fuel-cards-grid">
+
+      <!-- PETROL -->
+      <div class="fuel-card">
+        <div class="fc-head petrol">
+          <div class="fc-head-left">
+            <div class="fc-icon petrol"><i class="fas fa-gas-pump"></i></div>
+            <div>
+              <div class="fc-name petrol">Petrol</div>
+              <div class="fc-updated"><i class="fas fa-clock"></i> last updated June 2025</div>
+            </div>
+          </div>
+        </div>
+        <div class="fc-inputs">
+          <div class="fc-input-row">
+            <div class="fc-input-wrap">
+              <label>Fuel Efficiency</label>
+              <div class="inp-w"><input type="number" id="mileage_petrol" value="15" min="1" step="0.1" /><span class="unit">kmpl</span></div>
+            </div>
+            <div class="fc-input-wrap">
+              <label>Price per Litre</label>
+              <div class="inp-w"><input type="number" id="price_petrol" value="94.72" min="1" step="0.01" /><span class="unit">₹/L</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="fc-results" id="result_petrol">
+          <div style="font-size:12px;color:var(--text-muted);padding:8px 0 4px">Press Calculate to see results</div>
+        </div>
+        <div class="cheapest-tag" id="cheapest_petrol" style="display:none"><i class="fas fa-trophy"></i> Cheapest Option</div>
+      </div>
+
+      <!-- DIESEL -->
+      <div class="fuel-card">
+        <div class="fc-head diesel">
+          <div class="fc-head-left">
+            <div class="fc-icon diesel"><i class="fas fa-gas-pump"></i></div>
+            <div>
+              <div class="fc-name diesel">Diesel</div>
+              <div class="fc-updated"><i class="fas fa-clock"></i> last updated June 2025</div>
+            </div>
+          </div>
+        </div>
+        <div class="fc-inputs">
+          <div class="fc-input-row">
+            <div class="fc-input-wrap">
+              <label>Fuel Efficiency</label>
+              <div class="inp-w"><input type="number" id="mileage_diesel" value="18" min="1" step="0.1" /><span class="unit">kmpl</span></div>
+            </div>
+            <div class="fc-input-wrap">
+              <label>Price per Litre</label>
+              <div class="inp-w"><input type="number" id="price_diesel" value="87.62" min="1" step="0.01" /><span class="unit">₹/L</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="fc-results" id="result_diesel">
+          <div style="font-size:12px;color:var(--text-muted);padding:8px 0 4px">Press Calculate to see results</div>
+        </div>
+        <div class="cheapest-tag" id="cheapest_diesel" style="display:none"><i class="fas fa-trophy"></i> Cheapest Option</div>
+      </div>
+
+      <!-- CNG -->
+      <div class="fuel-card">
+        <div class="fc-head cng">
+          <div class="fc-head-left">
+            <div class="fc-icon cng"><i class="fas fa-wind"></i></div>
+            <div>
+              <div class="fc-name cng">CNG</div>
+              <div class="fc-updated"><i class="fas fa-clock"></i> last updated June 2025</div>
+            </div>
+          </div>
+        </div>
+        <div class="fc-inputs">
+          <div class="fc-input-row">
+            <div class="fc-input-wrap">
+              <label>Fuel Efficiency</label>
+              <div class="inp-w"><input type="number" id="mileage_cng" value="22" min="1" step="0.1" /><span class="unit">km/kg</span></div>
+            </div>
+            <div class="fc-input-wrap">
+              <label>Price per Kg</label>
+              <div class="inp-w"><input type="number" id="price_cng" value="75.09" min="1" step="0.01" /><span class="unit">₹/Kg</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="fc-results" id="result_cng">
+          <div style="font-size:12px;color:var(--text-muted);padding:8px 0 4px">Press Calculate to see results</div>
+        </div>
+        <div class="cheapest-tag" id="cheapest_cng" style="display:none"><i class="fas fa-trophy"></i> Cheapest Option</div>
+      </div>
+
+      <!-- EV -->
+      <div class="fuel-card">
+        <div class="fc-head ev">
+          <div class="fc-head-left">
+            <div class="fc-icon ev"><i class="fas fa-bolt"></i></div>
+            <div>
+              <div class="fc-name ev">Electric (EV)</div>
+              <div class="fc-updated"><i class="fas fa-clock"></i> last updated June 2025</div>
+            </div>
+          </div>
+        </div>
+        <div class="fc-inputs">
+          <div class="fc-input-row">
+            <div class="fc-input-wrap">
+              <label>Efficiency</label>
+              <div class="inp-w"><input type="number" id="mileage_ev" value="6.5" min="1" step="0.1" /><span class="unit">km/kWh</span></div>
+            </div>
+            <div class="fc-input-wrap">
+              <label>Electricity Tariff</label>
+              <div class="inp-w"><input type="number" id="price_ev" value="8.00" min="1" step="0.01" /><span class="unit">₹/kWh</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="fc-results" id="result_ev">
+          <div style="font-size:12px;color:var(--text-muted);padding:8px 0 4px">Press Calculate to see results</div>
+        </div>
+        <div class="cheapest-tag" id="cheapest_ev" style="display:none"><i class="fas fa-trophy"></i> Cheapest Option</div>
+      </div>
+
+    </div><!-- /fuel-cards-grid -->
+
+    <!-- ══ COMPARISON TABLE ══ -->
+    <div class="card card-pad comp-section" id="compSection" style="display:none;margin-bottom:16px">
+      <div class="card-title"><i class="fas fa-table"></i> Full Fuel Comparison <span class="sub">All fuel types ranked by yearly cost</span></div>
+      <div class="comp-table-wrap">
+        <table class="comp-table">
+          <thead>
+            <tr>
+              <th>Fuel Type</th><th>Cost / KM</th><th>Daily</th><th>Monthly</th><th>Yearly</th><th>Extra vs Cheapest</th>
+            </tr>
+          </thead>
+          <tbody id="compBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ PRICE TREND GRAPH ══ -->
+    <div class="card graph-card" id="graphSection" style="display:none;margin-bottom:16px">
+      <div id="graph" style="scroll-margin-top:90px">
+        <div class="card-title"><i class="fas fa-chart-line"></i> Fuel Price Trend <span class="sub">Last 10 days</span></div>
+        <div class="graph-legend">
+          <div class="legend-item"><div class="legend-dot petrol"></div> Petrol</div>
+          <div class="legend-item"><div class="legend-dot diesel"></div> Diesel</div>
+          <div class="legend-item"><div class="legend-dot cng"></div> CNG</div>
+        </div>
+        <div id="priceChart"></div>
+      </div>
+    </div>
+
+    <!-- ══ HOW IT WORKS ══ -->
+    <div id="howItWorks" style="scroll-margin-top:90px;margin-bottom:6px">
+      <div class="section-label">How It Works</div>
+    </div>
+    <div class="steps-row">
+      <div class="step-card">
+        <div class="step-num">1</div><div class="step-icon">🏙️</div>
+        <h5>Select Your City</h5>
+        <p>Choose your city from the top selector — fuel prices are auto-filled</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div><div class="step-icon">📏</div>
+        <h5>Enter Distance</h5>
+        <p>Enter your daily, monthly or yearly driving distance in KM or Miles</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div><div class="step-icon">⚙️</div>
+        <h5>Adjust Mileage</h5>
+        <p>Update the fuel efficiency for your specific vehicle model</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">4</div><div class="step-icon">📊</div>
+        <h5>Compare &amp; Save</h5>
+        <p>See daily, monthly &amp; yearly costs for all fuel types — pick the cheapest</p>
+      </div>
+    </div>
+
+    <!-- ══ GUIDE CONTENT ══ -->
+    <div id="guide" style="scroll-margin-top:90px;margin-bottom:6px">
+      <div class="section-label">Fuel Cost Guide</div>
+    </div>
+    <div class="content-grid">
+      <div class="content-card">
+        <h4><i class="fas fa-gas-pump"></i> Petrol vs Diesel Running Cost</h4>
+        <p>Diesel vehicles are typically more fuel-efficient (18–22 kmpl vs 13–17 kmpl for petrol) and diesel is cheaper per litre. However, diesel engines cost ₹1–2L more upfront. Break-even usually happens at 60,000–80,000 km.</p>
+        <ul style="margin-top:8px">
+          <li>Petrol: Best for city drives under 10,000 km/year</li>
+          <li>Diesel: Better for highway/high-mileage users (15,000+ km/year)</li>
+        </ul>
+      </div>
+      <div class="content-card">
+        <h4><i class="fas fa-wind"></i> CNG Running Cost Guide</h4>
+        <p>CNG (Compressed Natural Gas) is 50–60% cheaper than petrol per km. A CNG car running 1,500 km/month saves ₹60,000–80,000 per year vs petrol.</p>
+        <ul style="margin-top:8px">
+          <li>CNG mileage: 20–28 km/kg (depends on engine)</li>
+          <li>Delhi CNG: ~₹75/kg · Mumbai: ~₹74/kg</li>
+          <li>Ideal for taxis, high-mileage city commuters</li>
+        </ul>
+      </div>
+      <div class="content-card">
+        <h4><i class="fas fa-bolt"></i> EV Running Cost Guide</h4>
+        <p>Electric vehicles cost just ₹1–2 per km at home charging rates, making them 70–80% cheaper than petrol. The savings on 1,500 km/month can be ₹80,000–1,00,000/year.</p>
+        <ul style="margin-top:8px">
+          <li>Home charging: ₹6–10/kWh (cheapest)</li>
+          <li>Public fast chargers: ₹15–25/kWh</li>
+          <li>Efficiency: 5–8 km/kWh (Nexon EV: ~6.5 km/kWh)</li>
+        </ul>
+      </div>
+      <div class="content-card">
+        <h4><i class="fas fa-leaf"></i> How Fuel Cost is Calculated</h4>
+        <p><strong>Formula:</strong> Cost per km = Fuel Price ÷ Mileage</p>
+        <ul style="margin-top:8px">
+          <li><strong>Petrol:</strong> ₹94.72 ÷ 15 kmpl = ₹6.31/km</li>
+          <li><strong>Diesel:</strong> ₹87.62 ÷ 18 kmpl = ₹4.87/km</li>
+          <li><strong>CNG:</strong> ₹75.09 ÷ 22 km/kg = ₹3.41/km</li>
+          <li><strong>EV:</strong> ₹8.00 ÷ 6.5 km/kWh = ₹1.23/km</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ══ FAQ ══ -->
+    <div class="card card-pad" id="faq" style="scroll-margin-top:90px;margin-bottom:16px">
+      <div class="card-title"><i class="fas fa-question-circle"></i> Frequently Asked Questions</div>
+      <div class="faq-list">
+        <div class="faq-item open">
+          <div class="faq-q">Which fuel is cheapest to run in India? <i class="fas fa-chevron-down"></i></div>
+          <div class="faq-a">EV (electric) is cheapest at ₹1–2/km. CNG is second at ₹3–4/km. Diesel is around ₹4–6/km. Petrol is the most expensive at ₹6–8/km. However, higher upfront cost and infrastructure availability must be considered before switching.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">How do I find my car's actual mileage? <i class="fas fa-chevron-down"></i></div>
+          <div class="faq-a">Real-world mileage is 15–20% lower than ARAI-certified figures due to traffic, AC usage, load, and driving style. Fill a full tank, drive 200–300 km, refill and calculate: KM driven ÷ Litres consumed = your real mileage.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Why do fuel prices differ across Indian cities? <i class="fas fa-chevron-down"></i></div>
+          <div class="faq-a">Petrol and diesel prices include state VAT which varies from 20–35%. States like Rajasthan, Telangana and Maharashtra charge higher VAT, making fuel more expensive there. CNG prices are set by city gas distribution companies and electricity tariffs are regulated by state electricity boards.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Is it worth switching from Petrol to CNG? <i class="fas fa-chevron-down"></i></div>
+          <div class="faq-a">If you drive 1,200+ km/month, a CNG retrofit (₹60,000–80,000) typically pays back within 12–18 months. You'll save ₹4,000–6,000/month vs petrol. Trade-offs: reduced boot space, slightly less power, and CNG stations outside major cities are limited.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">How often are fuel prices updated? <i class="fas fa-chevron-down"></i></div>
+          <div class="faq-a">Petrol and diesel prices are revised daily by oil marketing companies (IOC, HPCL, BPCL) though actual changes are infrequent. CNG prices are revised every 2–4 months. This calculator uses approximate current retail prices — verify on your fuel company's website for exact today's price.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">How is EV charging cost calculated? <i class="fas fa-chevron-down"></i></div>
+          <div class="faq-a">EV cost per km = Electricity tariff (₹/kWh) ÷ Efficiency (km/kWh). At Delhi's domestic rate of ₹8/kWh and Nexon EV's 6.5 km/kWh efficiency: ₹8 ÷ 6.5 = ₹1.23/km. Always use your home slab rate for accurate calculation — public fast chargers can cost 2–3× more.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ RELATED TOOLS ══ -->
+    <div class="card card-pad" style="margin-bottom:16px">
+      <div class="card-title"><i class="fas fa-tools"></i> Related Calculators</div>
+      <div class="related-tools">
+        <a href="#" class="tool-link"><i class="fas fa-car"></i> EMI Calculator</a>
+        <a href="#" class="tool-link"><i class="fas fa-exchange-alt"></i> Old Car Valuation</a>
+        <a href="#" class="tool-link"><i class="fas fa-road"></i> Road Tax Calculator</a>
+        <a href="#" class="tool-link"><i class="fas fa-shield-alt"></i> Insurance Calculator</a>
+        <a href="#" class="tool-link"><i class="fas fa-percent"></i> GST on Cars</a>
+        <a href="#" class="tool-link"><i class="fas fa-tag"></i> On-Road Price Calculator</a>
+      </div>
+    </div>
+
+    <!-- ══ CITY LINKS ══ -->
+    <div class="card card-pad" style="margin-bottom:16px">
+      <div class="card-title"><i class="fas fa-map-marker-alt"></i> Fuel Cost Calculator by City</div>
+      <div class="related-tools">
+        <a href="?city=Delhi"     class="tool-link"><i class="fas fa-city"></i> Delhi</a>
+        <a href="?city=Mumbai"    class="tool-link"><i class="fas fa-city"></i> Mumbai</a>
+        <a href="?city=Bangalore" class="tool-link"><i class="fas fa-city"></i> Bangalore</a>
+        <a href="?city=Chennai"   class="tool-link"><i class="fas fa-city"></i> Chennai</a>
+        <a href="?city=Hyderabad" class="tool-link"><i class="fas fa-city"></i> Hyderabad</a>
+        <a href="?city=Pune"      class="tool-link"><i class="fas fa-city"></i> Pune</a>
+        <a href="?city=Kolkata"   class="tool-link"><i class="fas fa-city"></i> Kolkata</a>
+        <a href="?city=Jaipur"    class="tool-link"><i class="fas fa-city"></i> Jaipur</a>
+        <a href="?city=Gurgaon"   class="tool-link"><i class="fas fa-city"></i> Gurgaon</a>
+        <a href="?city=Ahmedabad" class="tool-link"><i class="fas fa-city"></i> Ahmedabad</a>
+      </div>
+    </div>
+
+  </div><!-- /page-wrap -->
+
+  <!-- City selector bar (footer position) -->
+  <div class="city-bar">
+    <i class="fas fa-map-marker-alt"></i>
+    <span>Select City:</span>
+    <select id="cityNav" aria-label="Select City">
+      <option value="Delhi">Delhi</option>
+      <option value="Mumbai">Mumbai</option>
+      <option value="Bangalore">Bangalore</option>
+      <option value="Chennai">Chennai</option>
+      <option value="Hyderabad">Hyderabad</option>
+      <option value="Pune">Pune</option>
+      <option value="Kolkata">Kolkata</option>
+      <option value="Ahmedabad">Ahmedabad</option>
+      <option value="Jaipur">Jaipur</option>
+      <option value="Gurgaon">Gurgaon</option>
+    </select>
+  </div>
+
+</div><!-- /fc-page-wrap -->
+
+<!-- CarDekho Deals footer -->
+<div th:replace="~{website/fragments/layout :: footer}"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/website.js}"></script>
+<script th:src="@{/js/fuel-calculator.js}"></script>
+<script>
+  (function() {
+    const city = new URLSearchParams(window.location.search).get('city');
+    if (city) {
+      const sel = document.getElementById('cityNav');
+      if (sel) sel.value = city;
+    }
+  })();
+</script>
+</body>
+</html>

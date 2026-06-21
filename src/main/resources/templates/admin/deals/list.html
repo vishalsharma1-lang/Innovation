@@ -7,18 +7,46 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link th:href="@{/css/admin.css}" rel="stylesheet">
+    <style>
+        .car-type-toggle { display:flex; gap:0; border:1.5px solid #dee2e6; border-radius:8px; overflow:hidden; margin-bottom:20px; }
+        .car-type-btn {
+            flex:1; padding:10px 0; border:none; background:#f8f9fa; font-weight:600; font-size:14px;
+            cursor:pointer; transition:background .15s,color .15s; display:flex; align-items:center; justify-content:center; gap:7px;
+        }
+        .car-type-btn.active.new-car { background:#2563eb; color:#fff; }
+        .car-type-btn.active.used-car { background:#FF6B00; color:#fff; }
+        .car-type-btn:not(.active) { color:#6c757d; }
+        .used-tag { background:#fff3eb; color:#FF6B00; border:1px solid #fcc9bb; font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; }
+        .new-tag  { background:#dbeafe; color:#1d4ed8; border:1px solid #bfdbfe; font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; }
+        .deal-score-pill { font-size:10px; padding:2px 6px; border-radius:20px; font-weight:700; }
+        .score-best   { background:#dcfce7; color:#15803d; }
+        .score-good   { background:#dbeafe; color:#1d4ed8; }
+        .score-normal { background:#f1f5f9; color:#475569; }
+        .score-over   { background:#fee2e2; color:#dc2626; }
+        #usedCarSection { display:none; }
+        #newCarSection  { display:block; }
+    </style>
 </head>
 <body>
 <div th:replace="~{admin/fragments/sidebar :: sidebar}"></div>
 <div class="main-content">
     <div th:replace="~{admin/fragments/sidebar :: topbar('Deal Management')}"></div>
     <div class="content-area">
+
+        <!-- Filter tabs -->
+        <ul class="nav nav-pills mb-3" id="dealFilterTabs">
+            <li class="nav-item"><button class="nav-link active" onclick="filterDeals('ALL',this)"><i class="fas fa-list me-1"></i>All Deals</button></li>
+            <li class="nav-item"><button class="nav-link" onclick="filterDeals('NEW',this)"><i class="fas fa-car me-1"></i>New Cars</button></li>
+            <li class="nav-item"><button class="nav-link" onclick="filterDeals('USED',this)"><i class="fas fa-recycle me-1"></i>Used Cars</button></li>
+        </ul>
+
         <div class="card">
             <div class="card-header d-flex align-items-center justify-content-between">
-                <h6 class="mb-0 fw-600">Vehicle Deals & Offers</h6>
+                <h6 class="mb-0 fw-600">Vehicle Deals &amp; Offers <span class="badge bg-secondary ms-2" id="dealCount">0</span></h6>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-outline-success btn-sm" onclick="showFetchDealUrlModal()"><i class="fas fa-download me-1"></i>Fetch Offer From URL</button>
-                    <button class="btn btn-primary btn-sm" onclick="showDealModal()"><i class="fas fa-plus me-1"></i>Create Deal</button>
+                    <button class="btn btn-outline-success btn-sm" onclick="showFetchDealUrlModal()"><i class="fas fa-download me-1"></i>Fetch from URL</button>
+                    <button class="btn btn-outline-warning btn-sm" onclick="showDealModal('USED')"><i class="fas fa-recycle me-1"></i>Add Used Car Deal</button>
+                    <button class="btn btn-primary btn-sm" onclick="showDealModal('NEW')"><i class="fas fa-plus me-1"></i>Create New Car Deal</button>
                 </div>
             </div>
             <div class="card-body p-0">
@@ -28,41 +56,182 @@
     </div>
 </div>
 
-<!-- Deal Modal -->
+<!-- ══ DEAL MODAL ══════════════════════════════════════════ -->
 <div class="modal fade" id="dealModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
-            <div class="modal-header"><h5 class="modal-title" id="dealModalTitle">Create Deal</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-header">
+                <h5 class="modal-title" id="dealModalTitle">Create Deal</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
             <div class="modal-body">
                 <input type="hidden" id="dealId">
+
+                <!-- ── CAR TYPE TOGGLE ── -->
+                <div class="car-type-toggle">
+                    <button class="car-type-btn active new-car" id="btnNewCar" onclick="setCarType('NEW')">
+                        <i class="fas fa-car"></i> New Car Deal
+                    </button>
+                    <button class="car-type-btn used-car" id="btnUsedCar" onclick="setCarType('USED')">
+                        <i class="fas fa-recycle"></i> Used Car Deal
+                    </button>
+                </div>
+                <input type="hidden" id="ddCarType" value="NEW">
+
+                <!-- ══ NEW CAR SECTION ══ -->
+                <div id="newCarSection">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Select Brand *</label>
+                            <select id="ddBrand" class="form-select" onchange="onBrandChange()">
+                                <option value="">-- Select Brand --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Select Vehicle *</label>
+                            <select id="ddVehicleId" class="form-select" onchange="onVehicleSelect()">
+                                <option value="">-- Select Vehicle --</option>
+                            </select>
+                            <input type="hidden" id="ddVehicleName">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Select Dealer</label>
+                            <select id="ddDealerId" class="form-select" onchange="onDealerSelect()">
+                                <option value="">-- Select Dealer --</option>
+                            </select>
+                            <input type="hidden" id="ddDealerName">
+                        </div>
+                    </div>
+                    <!-- Vehicle info panel (auto-filled, read-only) -->
+                    <div id="vehicleInfoPanel" style="display:none;margin-top:14px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:14px 16px">
+                        <div style="display:flex;gap:14px;align-items:center">
+                            <img id="vipThumb" src="" alt="" style="width:90px;height:64px;object-fit:cover;border-radius:8px;background:#e2e8f0">
+                            <div style="flex:1">
+                                <div style="font-weight:700;font-size:15px;color:#0f172a" id="vipName"></div>
+                                <div style="font-size:12px;color:#64748b;margin-top:2px" id="vipMeta"></div>
+                                <div style="font-size:13px;font-weight:700;color:#EF4A23;margin-top:4px" id="vipPrice"></div>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+                                <span style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.4px">Auto-fetched from Vehicle Management</span>
+                                <span id="vipBadge" style="font-size:11px;padding:2px 8px;border-radius:20px;background:#dbeafe;color:#1d4ed8;font-weight:700"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══ USED CAR SECTION ══ -->
+                <div id="usedCarSection">
+                    <div class="alert alert-warning py-2 px-3 mb-3" style="font-size:13px">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Used car deal — visible on the <strong>/used-cars</strong> page. You can also pre-fill this from the <a href="/admin/used-car/extractor" class="alert-link">Used Car Extractor</a>.
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Select Vehicle (from Used inventory) *</label>
+                            <select id="ucVehicleSelect" class="form-select" onchange="onUsedVehicleSelect(this.value)">
+                                <option value="">-- Pick from Used inventory or enter manually below --</option>
+                            </select>
+                            <div class="form-text">Choose a vehicle added under Vehicle → Used type, or leave blank and fill brand/model manually.</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Brand *</label>
+                            <input type="text" id="ucBrand" class="form-control" placeholder="e.g. Maruti Suzuki">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Model *</label>
+                            <input type="text" id="ucModel" class="form-control" placeholder="e.g. Swift VXI">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Year *</label>
+                            <input type="number" id="ucYear" class="form-control" placeholder="2020" min="1990" max="2025">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">KM Driven</label>
+                            <input type="number" id="ucKm" class="form-control" placeholder="45000">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Asking Price (₹)</label>
+                            <input type="number" id="ucPrice" class="form-control" placeholder="550000">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Fuel Type</label>
+                            <select id="ucFuel" class="form-select">
+                                <option value="">-- Select --</option>
+                                <option>Petrol</option><option>Diesel</option><option>CNG</option>
+                                <option>Electric</option><option>Hybrid</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Transmission</label>
+                            <select id="ucTransmission" class="form-select">
+                                <option value="">-- Select --</option>
+                                <option>Manual</option><option>Automatic</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Owner Type</label>
+                            <select id="ucOwner" class="form-select">
+                                <option value="">-- Select --</option>
+                                <option>1st</option><option>2nd</option><option>3rd</option><option>4th+</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Color</label>
+                            <input type="text" id="ucColor" class="form-control" placeholder="e.g. White">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Registration State</label>
+                            <input type="text" id="ucRegState" class="form-control" placeholder="e.g. DL, MH">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Source Website</label>
+                            <select id="ucSource" class="form-select">
+                                <option value="">-- Select --</option>
+                                <option value="spinny">Spinny</option>
+                                <option value="cars24">Cars24</option>
+                                <option value="olx">OLX</option>
+                                <option value="cardekho">CarDekho</option>
+                                <option value="carwale">CarWale</option>
+                                <option value="dealer">Dealer Site</option>
+                                <option value="direct">Direct / Walk-in</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Deal Tag</label>
+                            <select id="ucDealTag" class="form-select">
+                                <option value="NORMAL">Normal</option>
+                                <option value="GOOD_DEAL">Good Deal</option>
+                                <option value="BEST_DEAL">Best Deal</option>
+                                <option value="OVERPRICED">Overpriced</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Deal Score (0–100)</label>
+                            <input type="number" id="ucScore" class="form-control" placeholder="75" min="0" max="100">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Listing URL</label>
+                            <input type="url" id="ucListingUrl" class="form-control" placeholder="https://www.spinny.com/used-cars/...">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Seller / Dealer Name</label>
+                            <input type="text" id="ucDealerName" class="form-control" placeholder="e.g. Spinny Hub or individual name">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══ COMMON FIELDS ══ -->
+                <hr class="my-3">
                 <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label">Select Brand *</label>
-                        <select id="ddBrand" class="form-select" onchange="onBrandChange()" required>
-                            <option value="">-- Select Brand --</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Select Vehicle *</label>
-                        <select id="ddVehicleId" class="form-select" onchange="onVehicleSelect()" required>
-                            <option value="">-- Select Vehicle --</option>
-                        </select>
-                        <input type="hidden" id="ddVehicleName">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Select Dealer</label>
-                        <select id="ddDealerId" class="form-select" onchange="onDealerSelect()">
-                            <option value="">-- Select Dealer --</option>
-                        </select>
-                        <input type="hidden" id="ddDealerName">
-                    </div>
                     <div class="col-md-4"><label class="form-label">City</label><input type="text" id="ddCity" class="form-control"></div>
-                    <div class="col-12"><label class="form-label">Deal Title</label><input type="text" id="ddTitle" class="form-control" placeholder="e.g. June Mega Offer"></div>
+                    <div class="col-12"><label class="form-label">Deal Title</label><input type="text" id="ddTitle" class="form-control" placeholder="e.g. Best Deal — 2021 Swift VXI, 1st Owner"></div>
                     <div class="col-12"><label class="form-label">Description</label><textarea id="ddDesc" class="form-control" rows="2"></textarea></div>
+
+                    <div class="col-12"><small class="text-muted fw-600">ADDITIONAL BENEFITS / DISCOUNTS (optional for used cars)</small></div>
                     <div class="col-md-4"><label class="form-label">Cash Discount (₹)</label><input type="number" id="ddCash" class="form-control" value="0"></div>
                     <div class="col-md-4"><label class="form-label">Exchange Bonus (₹)</label><input type="number" id="ddExchange" class="form-control" value="0"></div>
-                    <div class="col-md-4"><label class="form-label">Corporate Discount (₹)</label><input type="number" id="ddCorp" class="form-control" value="0"></div>
                     <div class="col-md-4"><label class="form-label">Finance Benefit (₹)</label><input type="number" id="ddFinance" class="form-control" value="0"></div>
+                    <div class="col-md-4"><label class="form-label">Corporate Discount (₹)</label><input type="number" id="ddCorp" class="form-control" value="0"></div>
                     <div class="col-md-4"><label class="form-label">Insurance Benefit (₹)</label><input type="number" id="ddInsurance" class="form-control" value="0"></div>
                     <div class="col-md-4"><label class="form-label">Priority</label><input type="number" id="ddPriority" class="form-control" value="0"></div>
                     <div class="col-md-4"><label class="form-label">Start Date</label><input type="date" id="ddStart" class="form-control"></div>
@@ -82,83 +251,182 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script th:src="@{/js/admin.js}"></script>
 <script>
-let allVehicles = [];
-let allDealers = [];
-let allBrands = [];
+let allVehicles = [], allDealers = [], allBrands = [], allUsedVehicles = [];
+let allDeals = [], currentFilter = 'ALL';
 
-// Load vehicles and dealers for dropdowns
 async function loadDropdowns() {
-    const [vResp, dResp] = await Promise.all([
+    const [vResp, dResp, uvResp] = await Promise.all([
         fetch('/api/vehicles?size=200'),
-        fetch('/api/deals/dealers')
+        fetch('/api/deals/dealers'),
+        fetch('/api/vehicles/used')
     ]);
     const vData = await vResp.json();
     allVehicles = vData.content || vData;
     allDealers = await dResp.json();
-
-    // Extract unique brands
+    allUsedVehicles = await uvResp.json();
     const brandSet = new Set();
     allVehicles.forEach(v => { if (v.brand) brandSet.add(v.brand); });
     allBrands = Array.from(brandSet).sort();
-
-    // Populate brand dropdown
     const bSelect = document.getElementById('ddBrand');
     bSelect.innerHTML = '<option value="">-- Select Brand --</option>';
     allBrands.forEach(b => { bSelect.innerHTML += `<option value="${b}">${b}</option>`; });
+    populateUsedVehicleDropdown();
+}
+
+function populateUsedVehicleDropdown(selectedId) {
+    const sel = document.getElementById('ucVehicleSelect');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">-- Pick from Used inventory or enter manually below --</option>';
+    allUsedVehicles.forEach(v => {
+        const label = `${v.brand || ''} ${v.name || ''}`.trim();
+        sel.innerHTML += `<option value="${v.id}" data-brand="${v.brand||''}" data-name="${v.name||''}">${label}</option>`;
+    });
+    if (selectedId) sel.value = selectedId;
+}
+
+function onUsedVehicleSelect(vehicleId) {
+    if (!vehicleId) return;
+    const v = allUsedVehicles.find(x => String(x.id) === String(vehicleId));
+    if (!v) return;
+    document.getElementById('ucBrand').value = v.brand || '';
+    document.getElementById('ucModel').value = v.name || '';
+    if (v.fuelType)      document.getElementById('ucFuel').value = v.fuelType;
+    if (v.transmission)  document.getElementById('ucTransmission').value = v.transmission;
 }
 
 function onBrandChange() {
     const brand = document.getElementById('ddBrand').value;
-
-    // Filter vehicles by brand
     const vSelect = document.getElementById('ddVehicleId');
     vSelect.innerHTML = '<option value="">-- Select Vehicle --</option>';
-    const filtered = brand ? allVehicles.filter(v => v.brand === brand) : allVehicles;
-    filtered.forEach(v => { vSelect.innerHTML += `<option value="${v.id}">${v.name}</option>`; });
-
-    // Filter dealers by brand
+    (brand ? allVehicles.filter(v => v.brand === brand) : allVehicles).forEach(v => {
+        vSelect.innerHTML += `<option value="${v.id}">${v.name}</option>`;
+    });
     const dSelect = document.getElementById('ddDealerId');
     dSelect.innerHTML = '<option value="">-- Select Dealer --</option>';
-    const filteredDealers = brand ? allDealers.filter(d => d.brand === brand) : allDealers;
-    filteredDealers.forEach(d => { dSelect.innerHTML += `<option value="${d.id}">${d.dealerName} ${d.city ? '- '+d.city : ''}</option>`; });
+    (brand ? allDealers.filter(d => d.brand === brand) : allDealers).forEach(d => {
+        dSelect.innerHTML += `<option value="${d.id}">${d.dealerName}${d.city ? ' - '+d.city : ''}</option>`;
+    });
 }
 
 function onVehicleSelect() {
-    const id = document.getElementById('ddVehicleId').value;
-    const v = allVehicles.find(x => x.id == id);
+    const vehicleId = document.getElementById('ddVehicleId').value;
+    const v = allVehicles.find(x => x.id == vehicleId);
     document.getElementById('ddVehicleName').value = v ? v.name : '';
+    const panel = document.getElementById('vehicleInfoPanel');
+    if (!vehicleId) { panel.style.display = 'none'; return; }
+    fetch(`/api/vehicles/${vehicleId}`).then(r => r.json()).then(vd => {
+        const thumb = vd.heroImage || vd.thumbnailImage || '';
+        document.getElementById('vipThumb').src = thumb;
+        document.getElementById('vipThumb').style.display = thumb ? 'block' : 'none';
+        document.getElementById('vipName').textContent = `${vd.brand || ''} ${vd.name || ''}`.trim();
+        const meta = [vd.fuelType, vd.transmission, vd.bodyType, vd.seatingCapacity ? vd.seatingCapacity + ' seats' : ''].filter(Boolean).join(' · ');
+        document.getElementById('vipMeta').textContent = meta || 'Specs not set';
+        const priceFrom = vd.priceFrom ? '₹' + (vd.priceFrom / 100000).toFixed(1) + 'L' : '';
+        const priceTo   = vd.priceTo   ? '₹' + (vd.priceTo   / 100000).toFixed(1) + 'L' : '';
+        document.getElementById('vipPrice').textContent = priceFrom && priceTo ? `${priceFrom} – ${priceTo}` : priceFrom || priceTo || 'Price not set';
+        document.getElementById('vipBadge').textContent = vd.vehicleType || vd.status || '';
+        panel.style.display = 'block';
+    }).catch(() => { panel.style.display = 'none'; });
 }
 
 function onDealerSelect() {
-    const id = document.getElementById('ddDealerId').value;
-    const d = allDealers.find(x => x.id == id);
+    const d = allDealers.find(x => x.id == document.getElementById('ddDealerId').value);
     document.getElementById('ddDealerName').value = d ? d.dealerName : '';
     if (d && d.city) document.getElementById('ddCity').value = d.city;
 }
 
+// ── CAR TYPE TOGGLE ─────────────────────────────────────────
+function setCarType(type) {
+    document.getElementById('ddCarType').value = type;
+    document.getElementById('btnNewCar').classList.toggle('active', type === 'NEW');
+    document.getElementById('btnUsedCar').classList.toggle('active', type === 'USED');
+    document.getElementById('newCarSection').style.display  = type === 'NEW'  ? 'block' : 'none';
+    document.getElementById('usedCarSection').style.display = type === 'USED' ? 'block' : 'none';
+}
+
+// ── FILTER TABS ──────────────────────────────────────────────
+function filterDeals(type, btn) {
+    currentFilter = type;
+    document.querySelectorAll('#dealFilterTabs .nav-link').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderDealList(allDeals.filter(d => type === 'ALL' || (d.carType || 'NEW') === type));
+}
+
+// ── LOAD DEALS ───────────────────────────────────────────────
 function loadDeals() {
     fetch('/api/deals').then(r=>r.json()).then(deals => {
-        const container = document.getElementById('dealList');
-        if (!deals || deals.length === 0) { container.innerHTML = '<p class="text-muted text-center">No deals yet. Create one!</p>'; return; }
-        let html = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Vehicle</th><th>Dealer</th><th>City</th><th>Total Savings</th><th>Period</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
-        deals.forEach(d => {
-            const savings = d.totalSavings ? '₹ ' + Number(d.totalSavings).toLocaleString('en-IN') : '-';
-            const period = (d.startDate || '?') + ' → ' + (d.endDate || 'No end');
-            html += `<tr><td class="fw-500">${d.vehicleName||'-'}</td><td>${d.dealerName||'-'}</td><td>${d.city||'-'}</td><td style="color:#FF6B00;font-weight:700">${savings}</td><td style="font-size:11px">${period}</td><td><span class="badge ${d.isActive?'badge-active':'badge-inactive'}">${d.isActive?'Active':'Inactive'}</span></td><td><button class="btn btn-sm btn-outline-primary me-1" onclick="editDeal(${d.id})"><i class="fas fa-edit"></i></button><button class="btn btn-sm btn-outline-danger" onclick="deleteDeal(${d.id})"><i class="fas fa-trash"></i></button></td></tr>`;
-        });
-        html += '</tbody></table></div>';
-        container.innerHTML = html;
+        allDeals = deals;
+        const filtered = deals.filter(d => currentFilter === 'ALL' || (d.carType || 'NEW') === currentFilter);
+        document.getElementById('dealCount').textContent = filtered.length;
+        renderDealList(filtered);
     });
 }
 
-function showDealModal() {
-    document.getElementById('dealModalTitle').textContent = 'Create Deal';
+function renderDealList(deals) {
+    const container = document.getElementById('dealList');
+    if (!deals || deals.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center py-4">No deals found. Create one!</p>';
+        return;
+    }
+    let html = `<div class="table-responsive"><table class="table table-sm table-hover">
+        <thead><tr>
+            <th>Type</th><th>Vehicle</th><th>Details</th><th>Dealer/Source</th>
+            <th>City</th><th>Savings / Price</th><th>Score</th><th>Period</th><th>Status</th><th>Actions</th>
+        </tr></thead><tbody>`;
+
+    deals.forEach(d => {
+        const isUsed = (d.carType || 'NEW') === 'USED';
+        const typeBadge = isUsed
+            ? '<span class="used-tag">USED</span>'
+            : '<span class="new-tag">NEW</span>';
+        const details = isUsed
+            ? [d.ucYear, d.ucKmDriven ? Number(d.ucKmDriven).toLocaleString('en-IN')+'km' : null, d.ucFuelType, d.ucOwnerType ? d.ucOwnerType+' Owner' : null].filter(Boolean).join(' · ')
+            : '';
+        const priceCol = isUsed && d.ucAskingPrice
+            ? `<span style="color:#FF6B00;font-weight:700">₹${Number(d.ucAskingPrice).toLocaleString('en-IN')}</span>`
+            : d.totalSavings > 0 ? `<span style="color:#FF6B00;font-weight:700">Save ₹${Number(d.totalSavings).toLocaleString('en-IN')}</span>` : '-';
+        const scoreTag = d.ucDealTag
+            ? `<span class="deal-score-pill ${d.ucDealTag==='BEST_DEAL'?'score-best':d.ucDealTag==='GOOD_DEAL'?'score-good':d.ucDealTag==='OVERPRICED'?'score-over':'score-normal'}">${d.ucDealTag.replace('_',' ')}</span>`
+            : '-';
+        const sourceIcon = { spinny:'🔵', cars24:'🟡', olx:'🔴', cardekho:'🟠', carwale:'⚪' }[d.ucSourceWebsite] || '';
+        html += `<tr>
+            <td>${typeBadge}</td>
+            <td class="fw-500">${d.vehicleName||'-'}</td>
+            <td style="font-size:11px;color:#6c757d">${details||'-'}</td>
+            <td style="font-size:12px">${sourceIcon} ${d.dealerName||d.ucSourceWebsite||'-'}</td>
+            <td>${d.city||'-'}</td>
+            <td>${priceCol}</td>
+            <td>${scoreTag}${d.ucDealScore ? `<br><small>${d.ucDealScore}/100</small>` : ''}</td>
+            <td style="font-size:11px">${(d.startDate||'?')} → ${d.endDate||'Open'}</td>
+            <td><span class="badge ${d.isActive?'badge-active':'badge-inactive'}">${d.isActive?'Active':'Inactive'}</span></td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="editDeal(${d.id})"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteDeal(${d.id})"><i class="fas fa-trash"></i></button>
+            </td>
+        </tr>`;
+    });
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+}
+
+// ── SHOW MODAL ───────────────────────────────────────────────
+function showDealModal(carType) {
+    carType = carType || 'NEW';
+    document.getElementById('dealModalTitle').textContent = carType === 'USED' ? 'Add Used Car Deal' : 'Create New Car Deal';
     document.getElementById('dealId').value = '';
+    // Reset new car fields
     document.getElementById('ddBrand').value = '';
     document.getElementById('ddVehicleId').innerHTML = '<option value="">-- Select Vehicle --</option>';
     document.getElementById('ddVehicleName').value = '';
     document.getElementById('ddDealerId').innerHTML = '<option value="">-- Select Dealer --</option>';
     document.getElementById('ddDealerName').value = '';
+    // Reset used car fields
+    populateUsedVehicleDropdown();
+    ['ucBrand','ucModel','ucColor','ucRegState','ucListingUrl','ucDealerName'].forEach(id => document.getElementById(id).value = '');
+    ['ucYear','ucKm','ucPrice','ucScore'].forEach(id => document.getElementById(id).value = '');
+    ['ucFuel','ucTransmission','ucOwner','ucSource'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('ucDealTag').value = 'NORMAL';
+    // Reset common
     document.getElementById('ddCity').value = '';
     document.getElementById('ddTitle').value = '';
     document.getElementById('ddDesc').value = '';
@@ -167,27 +435,50 @@ function showDealModal() {
     document.getElementById('ddEnd').value = '';
     document.getElementById('ddFeatured').value = 'false';
     document.getElementById('ddActive').value = 'true';
+    setCarType(carType);
     new bootstrap.Modal(document.getElementById('dealModal')).show();
 }
 
+// ── EDIT DEAL ────────────────────────────────────────────────
 function editDeal(id) {
     fetch(`/api/deals/${id}`).then(r=>r.json()).then(d => {
         document.getElementById('dealModalTitle').textContent = 'Edit Deal';
         document.getElementById('dealId').value = d.id;
+        const carType = d.carType || 'NEW';
+        setCarType(carType);
 
-        // Set brand and trigger cascade
-        const vehicle = allVehicles.find(v => v.id == d.vehicleId);
-        const brand = vehicle ? vehicle.brand : '';
-        document.getElementById('ddBrand').value = brand;
-        onBrandChange(); // populate vehicle/dealer lists
-
-        // Now set vehicle and dealer
-        setTimeout(() => {
-            document.getElementById('ddVehicleId').value = d.vehicleId || '';
-            document.getElementById('ddVehicleName').value = d.vehicleName || '';
-            document.getElementById('ddDealerId').value = d.dealerId || '';
-            document.getElementById('ddDealerName').value = d.dealerName || '';
-        }, 50);
+        if (carType === 'NEW') {
+            const vehicle = allVehicles.find(v => v.id == d.vehicleId);
+            const brand = vehicle ? vehicle.brand : '';
+            document.getElementById('ddBrand').value = brand;
+            onBrandChange();
+            setTimeout(() => {
+                document.getElementById('ddVehicleId').value = d.vehicleId || '';
+                document.getElementById('ddVehicleName').value = d.vehicleName || '';
+                document.getElementById('ddDealerId').value = d.dealerId || '';
+                document.getElementById('ddDealerName').value = d.dealerName || '';
+            }, 50);
+        } else {
+            // Pre-select used vehicle dropdown if vehicleId matches
+            populateUsedVehicleDropdown(d.vehicleId);
+            // Parse brand + model from vehicleName
+            const parts = (d.vehicleName || '').split(' ');
+            document.getElementById('ucBrand').value = parts[0] || '';
+            document.getElementById('ucModel').value = parts.slice(1).join(' ') || '';
+            document.getElementById('ucYear').value = d.ucYear || '';
+            document.getElementById('ucKm').value = d.ucKmDriven || '';
+            document.getElementById('ucPrice').value = d.ucAskingPrice || '';
+            document.getElementById('ucFuel').value = d.ucFuelType || '';
+            document.getElementById('ucTransmission').value = d.ucTransmission || '';
+            document.getElementById('ucOwner').value = d.ucOwnerType || '';
+            document.getElementById('ucColor').value = d.ucColor || '';
+            document.getElementById('ucRegState').value = d.ucRegistrationState || '';
+            document.getElementById('ucSource').value = d.ucSourceWebsite || '';
+            document.getElementById('ucDealTag').value = d.ucDealTag || 'NORMAL';
+            document.getElementById('ucScore').value = d.ucDealScore || '';
+            document.getElementById('ucListingUrl').value = d.ucListingUrl || '';
+            document.getElementById('ucDealerName').value = d.dealerName || '';
+        }
 
         document.getElementById('ddCity').value = d.city || '';
         document.getElementById('ddTitle').value = d.title || '';
@@ -206,16 +497,36 @@ function editDeal(id) {
     });
 }
 
+// ── SAVE DEAL ────────────────────────────────────────────────
 function saveDeal() {
-    const vehicleId = document.getElementById('ddVehicleId').value;
-    if (!vehicleId) { alert('Please select a vehicle'); return; }
-
+    const carType = document.getElementById('ddCarType').value;
     const id = document.getElementById('dealId').value;
+
+    let vehicleId = null, vehicleName = '', dealerId = null, dealerName = '';
+
+    if (carType === 'NEW') {
+        vehicleId = document.getElementById('ddVehicleId').value;
+        if (!vehicleId) { alert('Please select a vehicle'); return; }
+        vehicleId = parseInt(vehicleId);
+        vehicleName = document.getElementById('ddVehicleName').value;
+        dealerId = document.getElementById('ddDealerId').value ? parseInt(document.getElementById('ddDealerId').value) : null;
+        dealerName = document.getElementById('ddDealerName').value || null;
+    } else {
+        const brand = document.getElementById('ucBrand').value.trim();
+        const model = document.getElementById('ucModel').value.trim();
+        if (!brand || !model) { alert('Please enter brand and model for the used car'); return; }
+        vehicleName = [brand, model].join(' ');
+        dealerName = document.getElementById('ucDealerName').value || null;
+        const ucVehicleId = document.getElementById('ucVehicleSelect').value;
+        if (ucVehicleId) vehicleId = parseInt(ucVehicleId);
+    }
+
     const payload = {
-        vehicleId: parseInt(vehicleId),
-        vehicleName: document.getElementById('ddVehicleName').value,
-        dealerId: document.getElementById('ddDealerId').value ? parseInt(document.getElementById('ddDealerId').value) : null,
-        dealerName: document.getElementById('ddDealerName').value || null,
+        carType,
+        vehicleId,
+        vehicleName,
+        dealerId,
+        dealerName,
         city: document.getElementById('ddCity').value || null,
         title: document.getElementById('ddTitle').value || null,
         description: document.getElementById('ddDesc').value || null,
@@ -228,26 +539,45 @@ function saveDeal() {
         startDate: document.getElementById('ddStart').value || null,
         endDate: document.getElementById('ddEnd').value || null,
         isFeatured: document.getElementById('ddFeatured').value === 'true',
-        isActive: document.getElementById('ddActive').value === 'true'
+        isActive: document.getElementById('ddActive').value === 'true',
+        // Used car fields
+        ucYear: document.getElementById('ucYear').value ? parseInt(document.getElementById('ucYear').value) : null,
+        ucKmDriven: document.getElementById('ucKm').value ? parseInt(document.getElementById('ucKm').value) : null,
+        ucAskingPrice: document.getElementById('ucPrice').value ? parseFloat(document.getElementById('ucPrice').value) : null,
+        ucFuelType: document.getElementById('ucFuel').value || null,
+        ucTransmission: document.getElementById('ucTransmission').value || null,
+        ucOwnerType: document.getElementById('ucOwner').value || null,
+        ucColor: document.getElementById('ucColor').value || null,
+        ucRegistrationState: document.getElementById('ucRegState').value || null,
+        ucSourceWebsite: document.getElementById('ucSource').value || null,
+        ucDealTag: document.getElementById('ucDealTag').value || null,
+        ucDealScore: document.getElementById('ucScore').value ? parseInt(document.getElementById('ucScore').value) : null,
+        ucListingUrl: document.getElementById('ucListingUrl').value || null
     };
+
     const url = id ? `/api/deals/${id}` : '/api/deals';
     fetch(url, { method: id ? 'PUT' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) })
-        .then(r=>r.json()).then(() => { bootstrap.Modal.getInstance(document.getElementById('dealModal')).hide(); loadDeals(); });
+        .then(r=>r.json())
+        .then(() => { bootstrap.Modal.getInstance(document.getElementById('dealModal')).hide(); loadDeals(); });
 }
 
-function deleteDeal(id) { if(!confirm('Delete this deal?')) return; fetch(`/api/deals/${id}`,{method:'DELETE'}).then(()=>loadDeals()); }
+function deleteDeal(id) {
+    if (!confirm('Delete this deal?')) return;
+    fetch(`/api/deals/${id}`, { method:'DELETE' }).then(() => loadDeals());
+}
 
+// ── FETCH FROM URL ───────────────────────────────────────────
 function showFetchDealUrlModal() {
     const url = prompt('Enter offer/deal page URL:');
     if (!url || !url.trim()) return;
-    fetch('/api/deals/fetch-deal-url', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({url: url.trim()}) })
-        .then(r => r.json())
-        .then(result => {
-            if (result.error) { alert(result.error); return; }
-            const d = result.data;
-            // Open deal modal with fetched data
-            document.getElementById('dealModalTitle').textContent = 'Create Deal (Fetched from URL)';
-            document.getElementById('dealId').value = '';
+    fetch('/api/deals/fetch-deal-url', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ url: url.trim() })
+    }).then(r => r.json()).then(result => {
+        if (result.error) { alert(result.error); return; }
+        const d = result.data;
+        showDealModal('NEW');
+        setTimeout(() => {
             document.getElementById('ddTitle').value = d.title || '';
             document.getElementById('ddDesc').value = d.description || '';
             document.getElementById('ddCash').value = d.cashDiscount || 0;
@@ -255,21 +585,13 @@ function showFetchDealUrlModal() {
             document.getElementById('ddCorp').value = d.corporateDiscount || 0;
             document.getElementById('ddFinance').value = d.financeBenefit || 0;
             document.getElementById('ddInsurance').value = d.insuranceBenefit || 0;
-            document.getElementById('ddStart').value = new Date().toISOString().split('T')[0];
             document.getElementById('ddEnd').value = d.endDate || '';
-            document.getElementById('ddFeatured').value = 'false';
-            document.getElementById('ddActive').value = 'true';
-            document.getElementById('ddPriority').value = '0';
-            new bootstrap.Modal(document.getElementById('dealModal')).show();
             alert('Deal data fetched! Please select Brand and Vehicle, then save.');
-        })
-        .catch(e => alert('Error: ' + e.message));
+        }, 300);
+    }).catch(e => alert('Error: ' + e.message));
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    loadDropdowns();
-    loadDeals();
-});
+document.addEventListener('DOMContentLoaded', () => { loadDropdowns(); loadDeals(); });
 </script>
 </body>
 </html>

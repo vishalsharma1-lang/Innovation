@@ -398,15 +398,92 @@ const HeroSearch = {
     }
 };
 
+// ── Counter animation ───────────────────────────────────────────────────────
+function animateCounter(el) {
+    var target = parseInt(el.getAttribute('data-target')) || 0;
+    if (target === 0) return;
+    var duration = 1400;
+    var start = performance.now();
+    function tick(now) {
+        var progress = Math.min((now - start) / duration, 1);
+        var eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.round(eased * target);
+        if (progress < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+}
+
+// ── Scroll-triggered animations ─────────────────────────────────────────────
+function initScrollAnimations() {
+    var countersDone = false;
+    var animObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(e) {
+            if (!e.isIntersecting) return;
+            e.target.classList.add('is-visible');
+            animObserver.unobserve(e.target);
+        });
+    }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
+
+    var counterObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(e) {
+            if (!e.isIntersecting || countersDone) return;
+            countersDone = true;
+            document.querySelectorAll('.counter-val[data-target]').forEach(animateCounter);
+        });
+    }, { threshold: 0.5 });
+
+    document.querySelectorAll('.animate-on-scroll').forEach(function(el) {
+        animObserver.observe(el);
+    });
+
+    // Observe stats bar for counters
+    var statsBar = document.querySelector('.stats-bar');
+    if (statsBar) counterObserver.observe(statsBar);
+
+    // Also run counters if stats bar already in view on load
+    if (statsBar) {
+        var rect = statsBar.getBoundingClientRect();
+        if (rect.top < window.innerHeight) {
+            countersDone = true;
+            document.querySelectorAll('.counter-val[data-target]').forEach(animateCounter);
+        }
+    }
+}
+
+// ── Hero animations run via CSS keyframes (no JS needed) ────────────────────
+function initHeroAnimations() {}
+
+// ── Skeleton loading for images ──────────────────────────────────────────────
+function initSkeletonImages() {
+    document.querySelectorAll('img[loading="lazy"]').forEach(function(img) {
+        if (img.complete) return;
+        img.style.opacity = '0';
+        img.style.transition = 'opacity .3s ease';
+        img.addEventListener('load', function() { img.style.opacity = '1'; });
+        img.addEventListener('error', function() { img.style.opacity = '1'; });
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
+    initScrollAnimations();
+    initHeroAnimations();
+    initSkeletonImages();
+
     const nav = document.getElementById('mainNav');
     if (nav) {
         if (nav.classList.contains('nav-solid') || !document.querySelector('.hero-section')) {
             nav.classList.add('scrolled');
         }
+        const topBar = document.querySelector('.top-bar');
+        const topBarH = topBar ? topBar.offsetHeight : 33;
         const onScroll = () => {
-            if (window.scrollY > 60) nav.classList.add('scrolled');
-            else if (!nav.classList.contains('nav-solid') && document.querySelector('.hero-section')) nav.classList.remove('scrolled');
+            if (window.scrollY > topBarH) {
+                nav.classList.add('scrolled');
+                nav.style.top = '0';
+            } else {
+                nav.style.top = topBarH + 'px';
+                if (!nav.classList.contains('nav-solid') && document.querySelector('.hero-section')) nav.classList.remove('scrolled');
+            }
         };
         window.addEventListener('scroll', onScroll, { passive: true });
         onScroll();
@@ -442,4 +519,79 @@ document.addEventListener('DOMContentLoaded', function () {
     VehicleListing.init();
     VehicleDetail.init();
     HeroSearch.init();
+
+    // ── Home: Offers by Type filter pills ──
+    const offerTabs = document.querySelectorAll('.obt-pill');
+    const offerCards = document.querySelectorAll('#offerCardsGrid > [data-offer-types]');
+    const offerNoResults = document.getElementById('offerNoResults');
+    if (offerTabs.length) {
+        offerTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                offerTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const filter = tab.dataset.offer;
+                let visible = 0;
+                offerCards.forEach(card => {
+                    const types = (card.dataset.offerTypes || '').toLowerCase();
+                    const show = filter === 'all' || types.includes(filter);
+                    card.style.display = show ? '' : 'none';
+                    if (show) visible++;
+                });
+                if (offerNoResults) offerNoResults.style.display = visible === 0 ? '' : 'none';
+            });
+        });
+    }
+
+    // ── Home: Popular Cars strip scroll ──
+    const pcdStrip = document.getElementById('pcdStrip');
+    const pcdPrev  = document.getElementById('pcdPrev');
+    const pcdNext  = document.getElementById('pcdNext');
+    if (pcdStrip && pcdPrev && pcdNext) {
+        const scroll = dir => pcdStrip.scrollBy({ left: dir * 640, behavior: 'smooth' });
+        pcdPrev.addEventListener('click', () => scroll(-1));
+        pcdNext.addEventListener('click', () => scroll(1));
+        const sync = () => {
+            pcdPrev.style.opacity = pcdStrip.scrollLeft < 10 ? '0.35' : '1';
+            pcdNext.style.opacity = pcdStrip.scrollLeft + pcdStrip.clientWidth >= pcdStrip.scrollWidth - 10 ? '0.35' : '1';
+        };
+        pcdStrip.addEventListener('scroll', sync, { passive: true });
+        sync();
+    }
+
+    // ── Vehicles: offer quick-filter chips ──
+    const oqfChips = document.querySelectorAll('.oqf-chip');
+    if (oqfChips.length) {
+        oqfChips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                oqfChips.forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                const filter = chip.dataset.dealFilter;
+                document.querySelectorAll('#vehicleGrid [data-vehicle-card]').forEach(card => {
+                    if (filter === 'all') { card.style.display = ''; return; }
+                    const badge = card.querySelector('.vehicle-deal-badge');
+                    const hasDeal = !!badge;
+                    if (filter === 'has-deal') { card.style.display = hasDeal ? '' : 'none'; return; }
+                    // For cash/exchange/corporate/finance we rely on badge presence for now
+                    card.style.display = hasDeal ? '' : 'none';
+                });
+            });
+        });
+    }
+
+    // ── Vehicles: sort by savings ──
+    const sortSelect = document.getElementById('vehicleSort');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', () => {
+            if (sortSelect.value !== 'savings-desc') return;
+            const grid = document.getElementById('vehicleGrid');
+            if (!grid) return;
+            const cards = [...grid.querySelectorAll('[data-vehicle-card]')];
+            cards.sort((a, b) => {
+                const sa = parseFloat((a.querySelector('.vehicle-deal-badge')?.textContent.replace(/[^\d]/g,'')) || 0);
+                const sb = parseFloat((b.querySelector('.vehicle-deal-badge')?.textContent.replace(/[^\d]/g,'')) || 0);
+                return sb - sa;
+            });
+            cards.forEach(c => grid.appendChild(c));
+        });
+    }
 });

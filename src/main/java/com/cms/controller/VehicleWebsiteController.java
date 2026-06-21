@@ -35,10 +35,10 @@ public class VehicleWebsiteController {
     public String vehicleListPage(@RequestParam(value = "search", required = false) String search, Model model) {
         List<Vehicle> vehicles;
         if (search != null && !search.isBlank()) {
-            vehicles = vehicleService.searchActiveVehicles(search);
+            vehicles = vehicleService.searchNewCars(search);
             model.addAttribute("searchQuery", search);
         } else {
-            vehicles = vehicleService.getActiveVehicles();
+            vehicles = vehicleService.getNewCars();
         }
         // Ensure each vehicle has an image for display - fallback to first VehicleImage
         for (Vehicle v : vehicles) {
@@ -160,8 +160,9 @@ public class VehicleWebsiteController {
                 m.addAttribute("youtubeLimit", data.vehicle.getYoutubeLimit() != null ? data.vehicle.getYoutubeLimit() : 6);
             }
 
-            // Dealer deals for this vehicle
-            List<DealerDeal> vehicleDeals = dealRepo.findByVehicleIdAndIsActiveTrueAndIsDeletedFalseOrderByTotalSavingsDesc(vehicle.getId());
+            // Dealer deals for this vehicle — NEW deals only (USED deals belong on /used-cars)
+            List<DealerDeal> vehicleDeals = dealRepo.findByVehicleIdAndIsActiveTrueAndIsDeletedFalseOrderByTotalSavingsDesc(vehicle.getId())
+                .stream().filter(d -> !"USED".equals(d.getCarType())).collect(Collectors.toList());
             m.addAttribute("dealerDeals", vehicleDeals);
 
             return "website/vehicle-detail";
@@ -172,6 +173,7 @@ public class VehicleWebsiteController {
      * Build a map of vehicleId -> deal summary (maxSavings, dealerCount) for listing pages.
      */
     private Map<Long, Map<String, Object>> getVehicleDealsMap(List<Vehicle> vehicles) {
+        // findActiveDeals() already excludes USED deals at query level
         List<DealerDeal> allActiveDeals = dealRepo.findActiveDeals();
         Map<Long, Map<String, Object>> dealsMap = new HashMap<>();
         for (Vehicle v : vehicles) {

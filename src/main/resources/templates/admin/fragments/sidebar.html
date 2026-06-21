@@ -35,6 +35,11 @@
             <i class="fas fa-tags"></i> Deal Management
         </a>
 
+        <a th:href="@{/admin/used-car/extractor}"
+           th:classappend="${currentUri != null && #strings.contains(currentUri, '/used-car')} ? ' active' : ''">
+            <i class="fas fa-robot"></i> Used Car Extractor
+        </a>
+
         <div class="nav-section-title">Inventory</div>
         <a th:href="@{/admin/vehicles}"
            th:classappend="${currentUri != null && #strings.contains(currentUri, '/vehicles') && !#strings.contains(currentUri, '/import')} ? ' active' : ''">

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${deal.vehicleName + ' — Used Car Detail | CarDekho Deals'}">Used Car Detail</title>
+    <meta name="description" th:content="${'Buy ' + deal.vehicleName + (deal.ucYear != null ? ' ' + deal.ucYear : '') + '. Verified used car deal. ' + (deal.ucAskingPrice != null ? 'Price: ₹' + deal.ucAskingPrice : '')}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/website.css}" rel="stylesheet">
+    <style>
+        .ucd-hero { background:#0f172a; padding:0; }
+        .ucd-img-wrap {
+            height:340px; background:#1e293b;
+            display:flex; align-items:center; justify-content:center;
+            overflow:hidden; position:relative;
+        }
+        .ucd-img-wrap img { width:100%; height:100%; object-fit:cover; }
+        .ucd-img-ph { font-size:80px; color:#334155; }
+        .ucd-deal-badge {
+            position:absolute; top:16px; left:16px;
+            padding:5px 14px; border-radius:20px; font-size:12px; font-weight:800; text-transform:uppercase;
+        }
+        .badge-BEST_DEAL  { background:#dcfce7; color:#15803d; }
+        .badge-GOOD_DEAL  { background:#dbeafe; color:#1d4ed8; }
+        .badge-NORMAL     { background:#f1f5f9; color:#64748b; }
+        .badge-OVERPRICED { background:#fee2e2; color:#dc2626; }
+        .ucd-source {
+            position:absolute; top:16px; right:16px;
+            background:rgba(0,0,0,.55); color:#fff; border-radius:8px;
+            padding:4px 12px; font-size:11px; font-weight:700; text-transform:uppercase;
+        }
+
+        .ucd-info { background:#fff; padding:24px; border-radius:0 0 16px 16px; }
+        .ucd-car-title { font-size:26px; font-weight:800; color:#0f172a; margin-bottom:4px; }
+        .ucd-sub { color:#64748b; font-size:14px; margin-bottom:16px; }
+
+        .ucd-specs-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px; }
+        .ucd-spec-chip {
+            background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;
+            padding:8px 14px; font-size:13px; font-weight:600; color:#374151;
+            display:flex; align-items:center; gap:6px;
+        }
+        .ucd-spec-chip i { color:#EF4A23; font-size:12px; }
+
+        .ucd-price-card {
+            background:linear-gradient(135deg,#fff8f0,#fff); border:1.5px solid #fed7aa;
+            border-radius:14px; padding:20px 24px; margin-bottom:20px;
+        }
+        .ucd-price-label { font-size:12px; color:#92400e; text-transform:uppercase; font-weight:700; letter-spacing:.5px; }
+        .ucd-price-main { font-size:36px; font-weight:900; color:#EF4A23; line-height:1; margin:6px 0; }
+        .ucd-price-note { font-size:12px; color:#92400e; }
+
+        .ucd-score-bar { height:6px; background:#e2e8f0; border-radius:3px; margin-top:8px; }
+        .ucd-score-fill { height:100%; border-radius:3px; }
+
+        .ucd-seller-card {
+            background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px;
+            padding:18px 20px; margin-bottom:20px;
+        }
+        .ucd-seller-title { font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.5px; margin-bottom:10px; }
+        .ucd-seller-name { font-size:16px; font-weight:700; color:#0f172a; }
+        .ucd-seller-meta { font-size:13px; color:#64748b; margin-top:2px; }
+
+        .ucd-cta-stack { display:flex; flex-direction:column; gap:10px; }
+        .btn-whatsapp {
+            background:#25D366; color:#fff; border:none;
+            border-radius:10px; padding:14px 20px; font-size:15px; font-weight:700;
+            cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+            text-decoration:none; transition:background .15s;
+        }
+        .btn-whatsapp:hover { background:#1ebe5d; color:#fff; }
+        .btn-enquiry {
+            background:#EF4A23; color:#fff; border:none;
+            border-radius:10px; padding:14px 20px; font-size:15px; font-weight:700;
+            cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+            text-decoration:none; transition:background .15s;
+        }
+        .btn-enquiry:hover { background:#d63b17; color:#fff; }
+        .btn-view-more {
+            background:#fff; color:#0059A8; border:1.5px solid #0059A8;
+            border-radius:10px; padding:12px 20px; font-size:14px; font-weight:600;
+            cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+            text-decoration:none; transition:all .15s;
+        }
+        .btn-view-more:hover { background:#0059A8; color:#fff; }
+
+        .ucd-details-grid {
+            display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:20px;
+        }
+        .ucd-detail-item { background:#f8fafc; border-radius:10px; padding:12px 14px; }
+        .ucd-detail-label { font-size:11px; color:#64748b; text-transform:uppercase; font-weight:700; letter-spacing:.4px; margin-bottom:4px; }
+        .ucd-detail-val { font-size:15px; font-weight:700; color:#0f172a; }
+
+        .similar-card {
+            background:#fff; border:1.5px solid #e2e8f0; border-radius:12px; overflow:hidden;
+            transition:all .2s; text-decoration:none; display:block;
+        }
+        .similar-card:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,.1); }
+        .similar-img { height:130px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; color:#cbd5e1; font-size:36px; }
+        .similar-body { padding:12px; }
+        .similar-name { font-size:14px; font-weight:700; color:#0f172a; }
+        .similar-price { font-size:16px; font-weight:800; color:#EF4A23; margin-top:4px; }
+        .similar-spec { font-size:11px; color:#64748b; margin-top:4px; }
+
+        @media (min-width:992px) {
+            .ucd-layout { display:grid; grid-template-columns:1fr 360px; gap:24px; align-items:start; }
+        }
+    </style>
+</head>
+<body>
+<div th:replace="~{website/fragments/layout :: nav('used-cars')}"></div>
+
+<!-- DEBUG TEST -->
+<div style="background:red;height:50px;width:100%;display:block!important;margin-top:56px">DEBUG VISIBLE</div>
+<!-- Breadcrumb -->
+<div style="background:#0f172a; padding:12px 0; border-bottom:1px solid rgba(255,255,255,.08)">
+    <div class="container">
+        <nav style="font-size:13px; color:rgba(255,255,255,.5)">
+            <a href="/" style="color:rgba(255,255,255,.5); text-decoration:none">Home</a>
+            <span class="mx-2">›</span>
+            <a href="/used-cars" style="color:rgba(255,255,255,.5); text-decoration:none">Used Cars</a>
+            <span class="mx-2">›</span>
+            <span style="color:#fff" th:text="${deal.vehicleName}">Car Name</span>
+        </nav>
+    </div>
+</div>
+
+<div class="container" style="padding-top:28px; padding-bottom:60px">
+    <div class="ucd-layout">
+
+        <!-- LEFT COLUMN: Image + Details -->
+        <div>
+            <!-- Hero image -->
+            <div class="ucd-img-wrap" style="border-radius:16px 16px 0 0">
+                <img th:if="${vehicleImage != null}" th:src="${vehicleImage}" th:alt="${deal.vehicleName}"
+                     onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                <div class="ucd-img-ph" th:style="${vehicleImage != null} ? 'display:none' : ''">
+                    <i class="fas fa-car-side"></i>
+                </div>
+                <span class="ucd-deal-badge"
+                      th:classappend="'badge-' + (deal.ucDealTag != null ? deal.ucDealTag : 'NORMAL')">
+                    <i class="fas fa-check-circle me-1"
+                       th:if="${deal.ucDealTag == 'BEST_DEAL' or deal.ucDealTag == 'GOOD_DEAL'}"></i>
+                    <span th:switch="${deal.ucDealTag}">
+                        <span th:case="'BEST_DEAL'">🏆 Best Deal</span>
+                        <span th:case="'GOOD_DEAL'">👍 Good Deal</span>
+                        <span th:case="'OVERPRICED'">⚠ Overpriced</span>
+                        <span th:case="*">Used Car</span>
+                    </span>
+                </span>
+                <span class="ucd-source" th:if="${deal.ucSourceWebsite != null}"
+                      th:text="${#strings.toUpperCase(deal.ucSourceWebsite)}"></span>
+            </div>
+
+            <div class="ucd-info">
+                <h1 class="ucd-car-title" th:text="${deal.vehicleName}">Car Name</h1>
+                <p class="ucd-sub"
+                   th:text="${(deal.ucYear != null ? deal.ucYear + ' · ' : '') + (deal.ucFuelType != null ? deal.ucFuelType + ' · ' : '') + (deal.ucTransmission != null ? deal.ucTransmission : '') + (deal.city != null ? ' · ' + deal.city : '')}">
+                </p>
+
+                <!-- Spec chips -->
+                <div class="ucd-specs-row">
+                    <div class="ucd-spec-chip" th:if="${deal.ucKmDriven != null}">
+                        <i class="fas fa-road"></i>
+                        <span th:text="${#numbers.formatDecimal(deal.ucKmDriven, 1, 0) + ' km'}"></span>
+                    </div>
+                    <div class="ucd-spec-chip" th:if="${deal.ucOwnerType != null}">
+                        <i class="fas fa-user"></i>
+                        <span th:text="${deal.ucOwnerType + ' Owner'}"></span>
+                    </div>
+                    <div class="ucd-spec-chip" th:if="${deal.ucFuelType != null}">
+                        <i class="fas fa-gas-pump"></i>
+                        <span th:text="${deal.ucFuelType}"></span>
+                    </div>
+                    <div class="ucd-spec-chip" th:if="${deal.ucTransmission != null}">
+                        <i class="fas fa-cog"></i>
+                        <span th:text="${deal.ucTransmission}"></span>
+                    </div>
+                    <div class="ucd-spec-chip" th:if="${deal.ucColor != null}">
+                        <i class="fas fa-palette"></i>
+                        <span th:text="${deal.ucColor}"></span>
+                    </div>
+                    <div class="ucd-spec-chip" th:if="${deal.ucRegistrationState != null}">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span th:text="${deal.ucRegistrationState}"></span>
+                    </div>
+                </div>
+
+                <!-- Details grid -->
+                <div class="ucd-details-grid">
+                    <div class="ucd-detail-item" th:if="${deal.ucYear != null}">
+                        <div class="ucd-detail-label">Year</div>
+                        <div class="ucd-detail-val" th:text="${deal.ucYear}"></div>
+                    </div>
+                    <div class="ucd-detail-item" th:if="${deal.ucKmDriven != null}">
+                        <div class="ucd-detail-label">KM Driven</div>
+                        <div class="ucd-detail-val" th:text="${#numbers.formatDecimal(deal.ucKmDriven, 1, 0) + ' km'}"></div>
+                    </div>
+                    <div class="ucd-detail-item" th:if="${deal.ucFuelType != null}">
+                        <div class="ucd-detail-label">Fuel Type</div>
+                        <div class="ucd-detail-val" th:text="${deal.ucFuelType}"></div>
+                    </div>
+                    <div class="ucd-detail-item" th:if="${deal.ucTransmission != null}">
+                        <div class="ucd-detail-label">Transmission</div>
+                        <div class="ucd-detail-val" th:text="${deal.ucTransmission}"></div>
+                    </div>
+                    <div class="ucd-detail-item" th:if="${deal.ucOwnerType != null}">
+                        <div class="ucd-detail-label">Owner</div>
+                        <div class="ucd-detail-val" th:text="${deal.ucOwnerType}"></div>
+                    </div>
+                    <div class="ucd-detail-item" th:if="${deal.ucRegistrationState != null}">
+                        <div class="ucd-detail-label">Registered In</div>
+                        <div class="ucd-detail-val" th:text="${deal.ucRegistrationState}"></div>
+                    </div>
+                    <div class="ucd-detail-item" th:if="${deal.city != null}">
+                        <div class="ucd-detail-label">Location</div>
+                        <div class="ucd-detail-val" th:text="${deal.city}"></div>
+                    </div>
+                    <div class="ucd-detail-item" th:if="${deal.ucDealScore != null}">
+                        <div class="ucd-detail-label">Deal Score</div>
+                        <div class="ucd-detail-val" th:text="${deal.ucDealScore + '/100'}"></div>
+                    </div>
+                </div>
+
+                <div th:if="${deal.description != null and !#strings.isEmpty(deal.description)}" style="margin-bottom:16px">
+                    <p style="color:#374151; font-size:14px; line-height:1.7" th:text="${deal.description}"></p>
+                </div>
+
+                <a th:if="${deal.ucListingUrl != null}" th:href="${deal.ucListingUrl}" target="_blank"
+                   class="btn-view-more">
+                    <i class="fas fa-external-link-alt"></i> View Original Listing
+                </a>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Pricing + Seller + CTA -->
+        <div style="position:sticky; top:80px">
+
+            <!-- Price card -->
+            <div class="ucd-price-card">
+                <div class="ucd-price-label">Asking Price</div>
+                <div class="ucd-price-main" th:if="${deal.ucAskingPrice != null}">
+                    ₹<span th:text="${#numbers.formatDecimal(deal.ucAskingPrice / 100000, 1, 2)}"></span>L
+                </div>
+                <div class="ucd-price-main" th:unless="${deal.ucAskingPrice != null}" style="font-size:22px">Price on Request</div>
+                <div class="ucd-price-note">* Negotiable price. Contact seller for best offer.</div>
+
+                <div th:if="${deal.ucDealScore != null}" style="margin-top:14px">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:#92400e;margin-bottom:6px">
+                        <span>Deal Score</span>
+                        <span th:text="${deal.ucDealScore + '/100'}"></span>
+                    </div>
+                    <div class="ucd-score-bar">
+                        <div class="ucd-score-fill"
+                             th:style="'width:' + deal.ucDealScore + '%; background:' + (deal.ucDealScore >= 80 ? '#16a34a' : (deal.ucDealScore >= 60 ? '#2563eb' : '#d97706'))">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seller info -->
+            <div class="ucd-seller-card">
+                <div class="ucd-seller-title"><i class="fas fa-store me-1"></i>Seller Info</div>
+                <div class="ucd-seller-name" th:text="${deal.dealerName != null ? deal.dealerName : 'Available on Request'}"></div>
+                <div class="ucd-seller-meta" th:if="${deal.city != null}">
+                    <i class="fas fa-map-marker-alt me-1" style="color:#EF4A23"></i>
+                    <span th:text="${deal.city}"></span>
+                </div>
+                <div class="ucd-seller-meta" th:if="${deal.ucSourceWebsite != null}" style="margin-top:4px">
+                    <i class="fas fa-globe me-1" style="color:#0059A8"></i>
+                    Listed on <strong th:text="${#strings.toUpperCase(deal.ucSourceWebsite)}"></strong>
+                </div>
+            </div>
+
+            <!-- CTA buttons -->
+            <div class="ucd-cta-stack">
+                <a class="btn-whatsapp"
+                   th:href="${'https://wa.me/?text=' + #uris.escapePath('Hi, I am interested in the used ' + (deal.vehicleName != null ? deal.vehicleName : 'car') + (deal.ucYear != null ? ' (' + deal.ucYear + ')' : '') + (deal.city != null ? ' in ' + deal.city : '') + '. Please share details and best price.')}"
+                   target="_blank">
+                    <i class="fab fa-whatsapp" style="font-size:20px"></i> Chat on WhatsApp
+                </a>
+                <button class="btn-enquiry" onclick="document.getElementById('enquirySection').scrollIntoView({behavior:'smooth'})">
+                    <i class="fas fa-phone"></i> Contact Seller
+                </button>
+                <a href="/used-cars" class="btn-view-more">
+                    <i class="fas fa-th-large"></i> Browse More Used Cars
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enquiry section -->
+    <div id="enquirySection" style="background:#fff;border-radius:16px;padding:28px;margin-top:32px;border:1.5px solid #e2e8f0;max-width:600px">
+        <h3 style="font-size:20px;font-weight:800;color:#0f172a;margin-bottom:4px"><i class="fas fa-headset me-2" style="color:#EF4A23"></i>Get Best Price</h3>
+        <p style="color:#64748b;font-size:14px;margin-bottom:20px">Leave your details and the seller will contact you with the best offer.</p>
+        <form id="ucEnquiryForm" onsubmit="submitEnquiry(event)">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" id="eqName" class="form-control" placeholder="Your Name" required>
+                </div>
+                <div class="col-md-6">
+                    <input type="tel" id="eqPhone" class="form-control" placeholder="Mobile Number" required pattern="[0-9]{10}">
+                </div>
+                <div class="col-12">
+                    <input type="text" id="eqCity" class="form-control" placeholder="Your City"
+                           th:value="${deal.city != null ? deal.city : ''}">
+                </div>
+                <div class="col-12">
+                    <textarea id="eqMsg" class="form-control" rows="2"
+                              th:placeholder="'I am interested in ' + (deal.vehicleName != null ? deal.vehicleName : 'this used car') + '. Please share details.'"></textarea>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn-enquiry w-100" style="border-radius:8px">
+                        <i class="fas fa-paper-plane me-2"></i>Send Enquiry
+                    </button>
+                </div>
+            </div>
+        </form>
+        <div id="eqSuccess" style="display:none;background:#dcfce7;border-radius:10px;padding:14px;margin-top:12px;color:#15803d;font-weight:600;text-align:center">
+            <i class="fas fa-check-circle me-2"></i>Enquiry sent! Seller will contact you shortly.
+        </div>
+    </div>
+
+    <!-- Similar Used Cars -->
+    <div th:if="${similarDeals != null and !similarDeals.isEmpty()}" style="margin-top:40px">
+        <h3 style="font-size:20px;font-weight:800;color:#0f172a;margin-bottom:16px">
+            <i class="fas fa-car-side me-2" style="color:#EF4A23"></i>Similar Used Cars
+        </h3>
+        <div class="row g-3">
+            <div class="col-md-4" th:each="s : ${similarDeals}">
+                <a th:href="@{/used-cars/{id}(id=${s.id})}" class="similar-card">
+                    <div class="similar-img"><i class="fas fa-car-side"></i></div>
+                    <div class="similar-body">
+                        <div class="similar-name" th:text="${s.vehicleName}"></div>
+                        <div class="similar-price" th:if="${s.ucAskingPrice != null}">
+                            ₹<span th:text="${#numbers.formatDecimal(s.ucAskingPrice / 100000, 1, 2)}"></span>L
+                        </div>
+                        <div class="similar-spec"
+                             th:text="${(s.ucYear != null ? s.ucYear + ' · ' : '') + (s.ucFuelType != null ? s.ucFuelType + ' · ' : '') + (s.ucKmDriven != null ? #numbers.formatDecimal(s.ucKmDriven,1,0) + ' km' : '')}">
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{website/fragments/layout :: footer}"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function submitEnquiry(e) {
+    e.preventDefault();
+    const name  = document.getElementById('eqName').value;
+    const phone = document.getElementById('eqPhone').value;
+    const city  = document.getElementById('eqCity').value;
+    const msg   = document.getElementById('eqMsg').value || document.getElementById('eqMsg').placeholder;
+    const waMsg = encodeURIComponent(`Enquiry from ${name} (${phone}, ${city}): ${msg}`);
+    window.open('https://wa.me/?text=' + waMsg, '_blank');
+    document.getElementById('eqSuccess').style.display = 'block';
+    document.getElementById('ucEnquiryForm').reset();
+}
+</script>
+</body>
+</html>

@@ -9,10 +9,98 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link th:href="@{/css/website.css}" rel="stylesheet">
+    <style>
+        .page-hero { padding-top: 110px; }
+        .filter-drawer { display:none; position:fixed; top:0; left:0; width:300px; height:100vh; background:#fff; z-index:1055; box-shadow:4px 0 24px rgba(0,0,0,.15); padding:0; overflow-y:auto; transition:transform .3s ease; transform:translateX(-100%); }
+        .filter-drawer.open { transform:translateX(0); display:block; }
+        .filter-drawer-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:1054; }
+        .filter-drawer-overlay.open { display:block; }
+        .filter-drawer-head { display:flex; align-items:center; justify-content:space-between; padding:18px 20px; border-bottom:1px solid #e2e8f0; position:sticky; top:0; background:#fff; z-index:1; }
+        .filter-drawer-head h6 { margin:0; font-weight:800; font-size:15px; }
+        .fdb-close { background:none; border:none; font-size:20px; color:#64748b; cursor:pointer; line-height:1; padding:4px; }
+        .filter-drawer-body { padding:20px; }
+        .fdb-section { margin-bottom:22px; border-bottom:1px solid #f1f5f9; padding-bottom:18px; }
+        .fdb-section:last-child { border-bottom:none; }
+        .fdb-section-title { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.8px; color:#94a3b8; margin-bottom:12px; }
+        .fdb-check { display:flex; align-items:center; gap:8px; padding:5px 0; cursor:pointer; font-size:13px; color:#334155; }
+        .fdb-check input[type=checkbox] { accent-color:var(--primary); width:15px; height:15px; }
+        .fdb-check:hover { color:var(--primary); }
+        .budget-chips-row { display:flex; flex-wrap:wrap; gap:6px; }
+        .bchip { padding:4px 12px; border-radius:20px; border:1.5px solid #e2e8f0; font-size:12px; font-weight:600; cursor:pointer; background:#fff; color:#475569; transition:.15s; }
+        .bchip.active,.bchip:hover { background:var(--primary); color:#fff; border-color:var(--primary); }
+        .filter-apply-btn { width:100%; padding:12px; background:var(--primary); color:#fff; border:none; border-radius:10px; font-weight:700; font-size:14px; cursor:pointer; margin-top:4px; }
+        .filter-apply-btn:hover { background:var(--primary-dark); }
+        .filter-clear-btn { width:100%; padding:10px; background:#f1f5f9; color:#475569; border:none; border-radius:10px; font-weight:600; font-size:13px; cursor:pointer; margin-top:8px; }
+        .listing-filter-btn { display:inline-flex; align-items:center; gap:7px; padding:8px 16px; border:1.5px solid #e2e8f0; border-radius:10px; background:#fff; font-size:13px; font-weight:600; cursor:pointer; color:#334155; transition:.15s; }
+        .listing-filter-btn:hover { border-color:var(--primary); color:var(--primary); }
+        .listing-filter-btn .filter-active-count { background:var(--primary); color:#fff; border-radius:50%; width:18px; height:18px; font-size:10px; display:inline-flex; align-items:center; justify-content:center; }
+        .range-slider { width:100%; accent-color:var(--primary); margin:8px 0; }
+        .range-labels { display:flex; justify-content:space-between; font-size:11px; color:#94a3b8; margin-top:2px; }
+    </style>
 </head>
 <body>
 
 <div th:replace="~{website/fragments/layout :: nav('vehicles')}"></div>
+
+<!-- Filter Drawer Overlay -->
+<div class="filter-drawer-overlay" id="filterOverlay" onclick="closeFilters()"></div>
+
+<!-- Filter Drawer -->
+<div class="filter-drawer" id="filterDrawer">
+    <div class="filter-drawer-head">
+        <h6><i class="fas fa-sliders-h me-2" style="color:var(--primary)"></i>Filter Cars</h6>
+        <button class="fdb-close" onclick="closeFilters()">&times;</button>
+    </div>
+    <div class="filter-drawer-body">
+
+        <!-- Budget -->
+        <div class="fdb-section">
+            <div class="fdb-section-title">Budget</div>
+            <div class="budget-chips-row" id="budgetChips">
+                <span class="bchip" data-min="0" data-max="500000">Under ₹5L</span>
+                <span class="bchip" data-min="500000" data-max="1000000">₹5L–10L</span>
+                <span class="bchip" data-min="1000000" data-max="1500000">₹10L–15L</span>
+                <span class="bchip" data-min="1500000" data-max="2500000">₹15L–25L</span>
+                <span class="bchip" data-min="2500000" data-max="999999999">Above ₹25L</span>
+            </div>
+            <div style="margin-top:14px">
+                <div style="font-size:12px;color:#64748b;margin-bottom:4px">Max Price: ₹<span id="rangeVal">50L</span></div>
+                <input type="range" class="range-slider" id="priceRange" min="300000" max="5000000" step="100000" value="5000000" oninput="onRangeChange(this.value)">
+                <div class="range-labels"><span>₹3L</span><span>₹50L</span></div>
+            </div>
+        </div>
+
+        <!-- Fuel Type -->
+        <div class="fdb-section">
+            <div class="fdb-section-title">Fuel Type</div>
+            <label class="fdb-check"><input type="checkbox" data-filter="fuel" value="Petrol"> Petrol</label>
+            <label class="fdb-check"><input type="checkbox" data-filter="fuel" value="Diesel"> Diesel</label>
+            <label class="fdb-check"><input type="checkbox" data-filter="fuel" value="CNG"> CNG / CNG+Petrol</label>
+            <label class="fdb-check"><input type="checkbox" data-filter="fuel" value="Electric"> Electric</label>
+            <label class="fdb-check"><input type="checkbox" data-filter="fuel" value="Hybrid"> Hybrid</label>
+        </div>
+
+        <!-- Transmission -->
+        <div class="fdb-section">
+            <div class="fdb-section-title">Transmission</div>
+            <label class="fdb-check"><input type="checkbox" data-filter="transmission" value="Manual"> Manual</label>
+            <label class="fdb-check"><input type="checkbox" data-filter="transmission" value="Automatic"> Automatic / AMT</label>
+        </div>
+
+        <!-- Deals -->
+        <div class="fdb-section">
+            <div class="fdb-section-title">Offers</div>
+            <label class="fdb-check"><input type="checkbox" data-filter="deal" value="any"> Has Active Deals</label>
+            <label class="fdb-check"><input type="checkbox" data-filter="deal" value="cash"> Cash Discount</label>
+            <label class="fdb-check"><input type="checkbox" data-filter="deal" value="exchange"> Exchange Bonus</label>
+            <label class="fdb-check"><input type="checkbox" data-filter="deal" value="corporate"> Corporate Discount</label>
+            <label class="fdb-check"><input type="checkbox" data-filter="deal" value="finance"> Finance Offer</label>
+        </div>
+
+        <button class="filter-apply-btn" onclick="applyFilters()"><i class="fas fa-check me-2"></i>Apply Filters</button>
+        <button class="filter-clear-btn" onclick="clearFilters()"><i class="fas fa-times me-2"></i>Clear All Filters</button>
+    </div>
+</div>
 
 <section class="page-hero">
     <div class="container">
@@ -25,15 +113,43 @@
         <p th:text="${vehicles != null ? vehicles.size() + ' cars available with latest prices & dealer offers' : 'Explore our complete range of new cars'}">
             Explore our complete range of new cars
         </p>
+        <!-- Budget chips in hero -->
+        <div class="budget-chips" style="margin-top:16px">
+            <a href="/vehicles" class="budget-chip" th:classappend="${param.budget == null} ? ' active'">All</a>
+            <a href="/vehicles?budget=under5" class="budget-chip" th:classappend="${param.budget == 'under5'} ? ' active'">Under ₹5L</a>
+            <a href="/vehicles?budget=5to10" class="budget-chip" th:classappend="${param.budget == '5to10'} ? ' active'">₹5L–10L</a>
+            <a href="/vehicles?budget=10to15" class="budget-chip" th:classappend="${param.budget == '10to15'} ? ' active'">₹10L–15L</a>
+            <a href="/vehicles?budget=15to25" class="budget-chip" th:classappend="${param.budget == '15to25'} ? ' active'">₹15L–25L</a>
+            <a href="/vehicles?budget=above25" class="budget-chip" th:classappend="${param.budget == 'above25'} ? ' active'">Above ₹25L</a>
+        </div>
     </div>
 </section>
 
-<section class="section-pad bg-light">
+<section class="section-pad" style="background:var(--bg-section)">
     <div class="container">
 
-        <!-- Brand filters -->
+        <!-- Offers bar -->
+        <div class="vehicles-offer-bar mb-4" th:if="${vehicleDeals != null and !vehicleDeals.isEmpty()}">
+            <div class="vehicles-offer-bar-inner">
+                <span class="vob-label"><i class="fas fa-fire"></i> Offers Available</span>
+                <span class="vob-count">
+                    <strong th:text="${vehicleDeals.size()}">0</strong> cars with active deals this month
+                </span>
+                <div class="vob-tags">
+                    <span class="vob-tag"><i class="fas fa-money-bill-wave"></i> Cash Discount</span>
+                    <span class="vob-tag"><i class="fas fa-exchange-alt"></i> Exchange Bonus</span>
+                    <span class="vob-tag"><i class="fas fa-building"></i> Corporate</span>
+                    <span class="vob-tag"><i class="fas fa-credit-card"></i> Finance Offer</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Brand filter chips -->
         <div class="brand-filter-scroll" th:if="${brands != null and !brands.isEmpty()}">
-            <a href="/vehicles" class="brand-filter-chip active">All Brands</a>
+            <a href="/vehicles" class="brand-filter-chip" th:classappend="${param.hasDeals == null and param.search == null} ? ' active'">All</a>
+            <a href="/vehicles?hasDeals=true" class="brand-filter-chip deal-filter-chip" th:classappend="${param.hasDeals != null} ? ' active'">
+                <i class="fas fa-tags me-1"></i>With Deals
+            </a>
             <a th:each="brand : ${brands}"
                th:href="@{/brand/{slug}(slug=${#strings.toLowerCase(#strings.replace(brand,' ','-'))})}"
                class="brand-filter-chip"
@@ -41,36 +157,76 @@
         </div>
 
         <!-- Toolbar -->
-        <div class="mb-4 d-flex align-items-center gap-2" th:if="${searchQuery != null and !searchQuery.isEmpty()}">
-            <span class="text-muted small">Active Search:</span>
-            <span class="badge bg-secondary px-3 py-2 rounded-pill d-inline-flex align-items-center gap-2" style="font-size: 13px; font-weight: 500;">
-                <span th:text="${searchQuery}">Search Query</span>
-                <a href="/vehicles" class="text-white text-decoration-none" style="opacity: 0.8; font-size: 11px;"><i class="fas fa-times"></i></a>
-            </span>
+        <div class="listing-toolbar d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <!-- Filter button -->
+                <button class="listing-filter-btn" onclick="openFilters()">
+                    <i class="fas fa-sliders-h"></i> Filters
+                    <span class="filter-active-count" id="filterCount" style="display:none">0</span>
+                </button>
+
+                <!-- Active search tag -->
+                <span th:if="${searchQuery != null and !searchQuery.isEmpty()}"
+                      class="badge d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill"
+                      style="background:#f1f5f9;color:#334155;font-size:12px;font-weight:600;border:1.5px solid #e2e8f0">
+                    <i class="fas fa-search" style="font-size:10px;color:#94a3b8"></i>
+                    <span th:text="${searchQuery}"></span>
+                    <a href="/vehicles" class="text-muted text-decoration-none"><i class="fas fa-times" style="font-size:10px"></i></a>
+                </span>
+
+                <div class="listing-count">
+                    <strong th:text="${vehicles != null ? vehicles.size() : 0}">0</strong> cars
+                    <span th:if="${vehicleDeals != null and !vehicleDeals.isEmpty()}"
+                          style="color:var(--primary);font-weight:600;margin-left:4px">
+                        (<span th:text="${vehicleDeals.size()}"></span> with deals)
+                    </span>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+                <!-- Sort -->
+                <div class="d-flex align-items-center gap-2">
+                    <label for="vehicleSort" class="text-muted small mb-0 d-none d-md-block">Sort:</label>
+                    <select id="vehicleSort" class="listing-sort-select" aria-label="Sort vehicles" onchange="sortVehicles(this.value)">
+                        <option value="default">Recommended</option>
+                        <option value="price-asc">Price: Low → High</option>
+                        <option value="price-desc">Price: High → Low</option>
+                        <option value="name-asc">Name: A → Z</option>
+                        <option value="savings-desc">Most Savings First</option>
+                    </select>
+                </div>
+                <!-- View toggle -->
+                <div class="view-toggle">
+                    <button class="vt-btn active" id="btnGrid" onclick="setView('grid')" title="Grid view"><i class="fas fa-th"></i></button>
+                    <button class="vt-btn" id="btnList" onclick="setView('list')" title="List view"><i class="fas fa-list"></i></button>
+                </div>
+            </div>
         </div>
 
-        <div class="listing-toolbar d-flex flex-wrap align-items-center justify-content-between gap-3">
-            <div class="listing-count">
-                Showing <strong th:text="${vehicles != null ? vehicles.size() : 0}">0</strong> cars
-            </div>
-            <div class="d-flex align-items-center gap-2">
-                <label for="vehicleSort" class="text-muted small mb-0">Sort by:</label>
-                <select id="vehicleSort" class="listing-sort-select" aria-label="Sort vehicles">
-                    <option value="default">Recommended</option>
-                    <option value="price-asc">Price: Low to High</option>
-                    <option value="price-desc">Price: High to Low</option>
-                    <option value="name-asc">Name: A to Z</option>
-                    <option value="name-desc">Name: Z to A</option>
-                </select>
-            </div>
+        <!-- Offer type quick-filter chips -->
+        <div class="offer-quick-filters mb-4">
+            <button class="oqf-chip active" data-deal-filter="all" onclick="filterByDeal(this,'all')">All</button>
+            <button class="oqf-chip" data-deal-filter="has-deal" onclick="filterByDeal(this,'has-deal')"><i class="fas fa-bolt me-1"></i>Has Deal</button>
+            <button class="oqf-chip cash-chip" data-deal-filter="cash" onclick="filterByDeal(this,'cash')"><i class="fas fa-money-bill-wave me-1"></i>Cash</button>
+            <button class="oqf-chip exchange-chip" data-deal-filter="exchange" onclick="filterByDeal(this,'exchange')"><i class="fas fa-exchange-alt me-1"></i>Exchange</button>
+            <button class="oqf-chip corporate-chip" data-deal-filter="corporate" onclick="filterByDeal(this,'corporate')"><i class="fas fa-building me-1"></i>Corporate</button>
+            <button class="oqf-chip finance-chip" data-deal-filter="finance" onclick="filterByDeal(this,'finance')"><i class="fas fa-credit-card me-1"></i>Finance</button>
         </div>
 
-        <!-- Vehicle grid -->
+        <!-- Vehicle grid / list -->
         <div class="row g-4" id="vehicleGrid">
             <div th:each="vehicle : ${vehicles}"
-                 class="col-md-6 col-lg-4 d-flex"
+                 class="col-md-6 col-lg-4 d-flex vehicle-item"
                  data-vehicle-card
-                 th:attr="data-price=${vehicle.startingPrice}, data-name=${vehicle.name}">
+                 th:attr="data-price=${vehicle.startingPrice != null ? vehicle.startingPrice : 0},
+                          data-name=${vehicle.name},
+                          data-fuel=${vehicle.fuelType},
+                          data-transmission=${vehicle.transmissionType},
+                          data-savings=${vehicleDeals != null and vehicleDeals.containsKey(vehicle.id) ? vehicleDeals.get(vehicle.id).get('maxSavings') : 0},
+                          data-has-cash=${vehicleDeals != null and vehicleDeals.containsKey(vehicle.id) and vehicleDeals.get(vehicle.id).get('cashDiscount') != null and vehicleDeals.get(vehicle.id).get('cashDiscount') > 0},
+                          data-has-exchange=${vehicleDeals != null and vehicleDeals.containsKey(vehicle.id) and vehicleDeals.get(vehicle.id).get('exchangeBonus') != null and vehicleDeals.get(vehicle.id).get('exchangeBonus') > 0},
+                          data-has-corporate=${vehicleDeals != null and vehicleDeals.containsKey(vehicle.id) and vehicleDeals.get(vehicle.id).get('corporateDiscount') != null and vehicleDeals.get(vehicle.id).get('corporateDiscount') > 0},
+                          data-has-finance=${vehicleDeals != null and vehicleDeals.containsKey(vehicle.id) and vehicleDeals.get(vehicle.id).get('financeBenefit') != null and vehicleDeals.get(vehicle.id).get('financeBenefit') > 0}">
                 <div th:replace="~{website/fragments/layout :: vehicleCard(${vehicle}, ${vehicleDeals})}"></div>
             </div>
 
@@ -83,6 +239,16 @@
                 </div>
             </div>
         </div>
+
+        <!-- No results after filter -->
+        <div id="noFilterResults" style="display:none" class="col-12">
+            <div class="empty-state">
+                <i class="fas fa-filter d-block"></i>
+                <h5>No cars match your filters</h5>
+                <p class="text-muted">Try adjusting your budget or removing some filters.</p>
+                <button class="btn btn-primary-gradient mt-2" onclick="clearFilters()">Clear Filters</button>
+            </div>
+        </div>
     </div>
 </section>
 
@@ -90,5 +256,159 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script th:src="@{/js/website.js}"></script>
+<script>
+var currentView = 'grid';
+var activeFilters = { budget: null, fuels: [], transmissions: [], deal: null };
+
+// ── Drawer open/close ──────────────────────────────────────
+function openFilters() {
+    document.getElementById('filterDrawer').classList.add('open');
+    document.getElementById('filterOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+function closeFilters() {
+    document.getElementById('filterDrawer').classList.remove('open');
+    document.getElementById('filterOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+// ── View toggle ────────────────────────────────────────────
+function setView(v) {
+    currentView = v;
+    var grid = document.getElementById('vehicleGrid');
+    var items = grid.querySelectorAll('.vehicle-item');
+    document.getElementById('btnGrid').classList.toggle('active', v === 'grid');
+    document.getElementById('btnList').classList.toggle('active', v === 'list');
+    if (v === 'list') {
+        items.forEach(function(item) {
+            item.className = item.className.replace(/col-md-\d+|col-lg-\d+/g,'').trim();
+            item.classList.add('col-12');
+        });
+        grid.classList.remove('g-4');
+        grid.classList.add('g-3','flex-column');
+    } else {
+        items.forEach(function(item) {
+            item.className = item.className.replace('col-12','').trim();
+            item.classList.add('col-md-6','col-lg-4');
+        });
+        grid.classList.remove('g-3','flex-column');
+        grid.classList.add('g-4');
+    }
+}
+
+// ── Quick deal filter ──────────────────────────────────────
+function filterByDeal(btn, type) {
+    document.querySelectorAll('.oqf-chip').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    activeFilters.deal = type === 'all' ? null : type;
+    renderVisible();
+}
+
+// ── Budget range display ───────────────────────────────────
+function onRangeChange(val) {
+    var lakh = (val / 100000).toFixed(0);
+    document.getElementById('rangeVal').textContent = lakh + 'L';
+}
+
+// ── Budget chips ───────────────────────────────────────────
+document.querySelectorAll('.bchip').forEach(function(chip) {
+    chip.addEventListener('click', function() {
+        document.querySelectorAll('.bchip').forEach(function(c){ c.classList.remove('active'); });
+        chip.classList.add('active');
+        activeFilters.budget = { min: parseInt(chip.dataset.min), max: parseInt(chip.dataset.max) };
+    });
+});
+
+// ── Sort ───────────────────────────────────────────────────
+function sortVehicles(val) {
+    var grid = document.getElementById('vehicleGrid');
+    var items = Array.from(grid.querySelectorAll('.vehicle-item'));
+    items.sort(function(a, b) {
+        if (val === 'price-asc')  return parseFloat(a.dataset.price||0) - parseFloat(b.dataset.price||0);
+        if (val === 'price-desc') return parseFloat(b.dataset.price||0) - parseFloat(a.dataset.price||0);
+        if (val === 'name-asc')   return (a.dataset.name||'').localeCompare(b.dataset.name||'');
+        if (val === 'savings-desc') return parseFloat(b.dataset.savings||0) - parseFloat(a.dataset.savings||0);
+        return 0;
+    });
+    items.forEach(function(item){ grid.appendChild(item); });
+}
+
+// ── Apply filters from drawer ──────────────────────────────
+function applyFilters() {
+    activeFilters.fuels = Array.from(document.querySelectorAll('input[data-filter="fuel"]:checked')).map(function(c){ return c.value.toLowerCase(); });
+    activeFilters.transmissions = Array.from(document.querySelectorAll('input[data-filter="transmission"]:checked')).map(function(c){ return c.value.toLowerCase(); });
+    var dealChecks = Array.from(document.querySelectorAll('input[data-filter="deal"]:checked')).map(function(c){ return c.value; });
+    if (dealChecks.length) activeFilters.deal = dealChecks[0];
+    var rangeVal = parseInt(document.getElementById('priceRange').value);
+    if (rangeVal < 5000000) activeFilters.budget = { min: 0, max: rangeVal };
+    renderVisible();
+    updateFilterCount();
+    closeFilters();
+}
+
+function clearFilters() {
+    activeFilters = { budget: null, fuels: [], transmissions: [], deal: null };
+    document.querySelectorAll('input[data-filter]').forEach(function(c){ c.checked = false; });
+    document.querySelectorAll('.bchip').forEach(function(c){ c.classList.remove('active'); });
+    document.getElementById('priceRange').value = 5000000;
+    onRangeChange(5000000);
+    document.querySelectorAll('.oqf-chip').forEach(function(b){ b.classList.remove('active'); });
+    document.querySelector('.oqf-chip[data-deal-filter="all"]').classList.add('active');
+    renderVisible();
+    updateFilterCount();
+}
+
+function updateFilterCount() {
+    var count = 0;
+    if (activeFilters.budget) count++;
+    count += activeFilters.fuels.length;
+    count += activeFilters.transmissions.length;
+    if (activeFilters.deal) count++;
+    var el = document.getElementById('filterCount');
+    el.style.display = count ? 'inline-flex' : 'none';
+    el.textContent = count;
+}
+
+function renderVisible() {
+    var items = document.querySelectorAll('.vehicle-item');
+    var visible = 0;
+    items.forEach(function(item) {
+        var price = parseFloat(item.dataset.price||0);
+        var fuel = (item.dataset.fuel||'').toLowerCase();
+        var trans = (item.dataset.transmission||'').toLowerCase();
+        var hasDeal = item.dataset.savings && parseFloat(item.dataset.savings) > 0;
+        var hasCash = item.dataset.hasCash === 'true';
+        var hasExchange = item.dataset.hasExchange === 'true';
+        var hasCorp = item.dataset.hasCorporate === 'true';
+        var hasFin = item.dataset.hasFinance === 'true';
+
+        var show = true;
+        if (activeFilters.budget && price > 0) {
+            show = show && price >= activeFilters.budget.min && price <= activeFilters.budget.max;
+        }
+        if (activeFilters.fuels.length) {
+            show = show && activeFilters.fuels.some(function(f){ return fuel.indexOf(f) !== -1; });
+        }
+        if (activeFilters.transmissions.length) {
+            show = show && activeFilters.transmissions.some(function(t){ return trans.indexOf(t) !== -1; });
+        }
+        if (activeFilters.deal === 'has-deal') show = show && hasDeal;
+        if (activeFilters.deal === 'cash')     show = show && hasCash;
+        if (activeFilters.deal === 'exchange') show = show && hasExchange;
+        if (activeFilters.deal === 'corporate') show = show && hasCorp;
+        if (activeFilters.deal === 'finance')  show = show && hasFin;
+
+        item.style.display = show ? '' : 'none';
+        if (show) visible++;
+    });
+    document.getElementById('noFilterResults').style.display = visible === 0 ? 'block' : 'none';
+}
+
+// ── Animate on scroll ──────────────────────────────────────
+var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e){ if (e.isIntersecting) e.target.classList.add('is-visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.animate-on-scroll').forEach(function(el){ observer.observe(el); });
+</script>
 </body>
 </html>

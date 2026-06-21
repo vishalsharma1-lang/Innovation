@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Used Car Extractor — Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/admin.css}" rel="stylesheet">
+    <style>
+        .extractor-hero {
+            background: linear-gradient(135deg,#0f172a 0%,#1e293b 100%);
+            border-radius: 14px;
+            padding: 24px 28px;
+            color: #fff;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .extractor-hero .hero-icon {
+            width: 56px; height: 56px;
+            background: rgba(255,107,0,.2);
+            border: 1.5px solid rgba(255,107,0,.4);
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; color: #FF6B00;
+            flex-shrink: 0;
+        }
+        .extractor-hero h2 { font-size: 20px; font-weight: 700; margin: 0 0 4px; }
+        .extractor-hero p  { font-size: 13px; color: #94a3b8; margin: 0; }
+        .source-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 3px 10px; border-radius: 20px;
+            font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px;
+        }
+        .source-badge.spinny  { background:#fff3eb; color:#d97706; }
+        .source-badge.cars24  { background:#fef3c7; color:#b45309; }
+        .source-badge.olx     { background:#dbeafe; color:#1d4ed8; }
+        .source-badge.dealer  { background:#dcfce7; color:#15803d; }
+        .input-mode-tabs .nav-link {
+            font-size: 13px; font-weight: 600; padding: 7px 18px;
+        }
+        .input-mode-tabs .nav-link.active { background: #FF6B00 !important; border-color: #FF6B00 !important; }
+        #contentArea {
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 13px;
+            min-height: 180px;
+            resize: vertical;
+        }
+        .result-panel { display: none; }
+        .result-panel.show { display: block; }
+        .json-display {
+            background: #0f172a;
+            color: #e2e8f0;
+            border-radius: 10px;
+            padding: 16px;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 12.5px;
+            line-height: 1.7;
+            max-height: 420px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        /* JSON syntax highlights */
+        .json-key    { color: #7dd3fc; }
+        .json-str    { color: #86efac; }
+        .json-num    { color: #fbbf24; }
+        .json-bool   { color: #f472b6; }
+        .json-null   { color: #94a3b8; }
+
+        .deal-score-bar {
+            height: 8px; border-radius: 4px; background: #e2e8f0; overflow: hidden; margin: 6px 0;
+        }
+        .deal-score-fill { height: 100%; border-radius: 4px; transition: width .6s ease; }
+        .tag-BEST_DEAL  { background: #dcfce7; color: #15803d; }
+        .tag-GOOD_DEAL  { background: #dbeafe; color: #1d4ed8; }
+        .tag-NORMAL     { background: #f1f5f9; color: #475569; }
+        .tag-OVERPRICED { background: #fee2e2; color: #dc2626; }
+        .action-CREATE_DEAL    { --bs-btn-bg: #16a34a; --bs-btn-border-color: #16a34a; --bs-btn-hover-bg: #15803d; }
+        .action-SAVE_INVENTORY { --bs-btn-bg: #2563eb; --bs-btn-border-color: #2563eb; --bs-btn-hover-bg: #1d4ed8; }
+        .action-NEED_REVIEW    { --bs-btn-bg: #d97706; --bs-btn-border-color: #d97706; --bs-btn-hover-bg: #b45309; }
+        .spin { animation: spin .8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .history-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: border-color .15s;
+        }
+        .history-item:hover { border-color: #FF6B00; }
+        .copy-btn { font-size: 11px; }
+    </style>
+</head>
+<body>
+<div th:replace="~{admin/fragments/sidebar :: sidebar}"></div>
+<div class="main-content">
+    <div th:replace="~{admin/fragments/sidebar :: topbar('Used Car Extractor')}"></div>
+    <div class="content-area">
+
+        <!-- HERO -->
+        <div class="extractor-hero">
+            <div class="hero-icon"><i class="fas fa-robot"></i></div>
+            <div>
+                <h2><i class="fas fa-magic me-2" style="color:#FF6B00"></i>Used Car Data Extraction Engine</h2>
+                <p>Paste a URL or HTML from Spinny, Cars24, OLX, or any dealer site — AI extracts structured data and scores the deal automatically.</p>
+            </div>
+            <div class="ms-auto d-none d-md-flex gap-2 align-items-center">
+                <span class="source-badge spinny">Spinny</span>
+                <span class="source-badge cars24">Cars24</span>
+                <span class="source-badge olx">OLX</span>
+                <span class="source-badge dealer">Dealers</span>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- LEFT: INPUT -->
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header d-flex align-items-center gap-2">
+                        <i class="fas fa-paste" style="color:#FF6B00"></i>
+                        <span class="fw-600">Input Source</span>
+                    </div>
+                    <div class="card-body">
+
+                        <!-- Mode tabs -->
+                        <ul class="nav nav-pills input-mode-tabs mb-3" id="modeTabs">
+                            <li class="nav-item">
+                                <button class="nav-link active" id="tabPaste" onclick="switchMode('paste')">
+                                    <i class="fas fa-paste me-1"></i> Paste HTML / Text
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" id="tabUrl" onclick="switchMode('url')">
+                                    <i class="fas fa-link me-1"></i> Fetch from URL
+                                </button>
+                            </li>
+                        </ul>
+
+                        <!-- URL input (hidden by default) -->
+                        <div id="urlInputWrap" style="display:none;margin-bottom:12px">
+                            <label class="form-label fw-600">Car Listing URL</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-link"></i></span>
+                                <input type="url" id="urlInput" class="form-control"
+                                       placeholder="https://www.spinny.com/used-cars/... or Cars24/OLX URL">
+                                <button class="btn btn-outline-secondary btn-sm" onclick="fetchUrl()">
+                                    <i class="fas fa-download me-1"></i>Fetch
+                                </button>
+                            </div>
+                            <small class="text-muted">Content is fetched server-side — CORS is not an issue</small>
+                        </div>
+
+                        <!-- Source URL field (visible in both modes) -->
+                        <div class="mb-3">
+                            <label class="form-label fw-600">Source URL <span class="text-muted fw-400">(optional — included in output)</span></label>
+                            <input type="url" id="sourceUrl" class="form-control"
+                                   placeholder="e.g. https://www.spinny.com/used-cars/...">
+                        </div>
+
+                        <!-- Content textarea -->
+                        <div class="mb-3">
+                            <label class="form-label fw-600">
+                                <i class="fas fa-code me-1 text-muted"></i>
+                                HTML / Page Text
+                            </label>
+                            <textarea id="contentArea" class="form-control"
+                                      placeholder="Paste the full HTML source or visible text from the used car listing page here...
+
+Example:
+2020 Maruti Swift VXI
+Price: ₹5,85,000
+KM Driven: 28,450 km
+Fuel Type: Petrol | Transmission: Manual
+Owner: 1st Owner | City: Delhi
+Registered in Delhi"></textarea>
+                            <div class="d-flex justify-content-between align-items-center mt-1">
+                                <small class="text-muted" id="charCount">0 characters</small>
+                                <button class="btn btn-link btn-sm p-0 text-danger" onclick="clearInput()">
+                                    <i class="fas fa-trash-alt me-1"></i>Clear
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-primary flex-grow-1 fw-600" id="extractBtn" onclick="extract()">
+                                <i class="fas fa-robot me-2"></i>Extract &amp; Score Deal
+                            </button>
+                        </div>
+
+                        <!-- Quick examples -->
+                        <div class="mt-3">
+                            <small class="text-muted fw-600">QUICK TEST — click to load sample:</small>
+                            <div class="d-flex gap-2 mt-2 flex-wrap">
+                                <button class="btn btn-outline-secondary btn-sm" onclick="loadSample('spinny')">Spinny Sample</button>
+                                <button class="btn btn-outline-secondary btn-sm" onclick="loadSample('cars24')">Cars24 Sample</button>
+                                <button class="btn btn-outline-secondary btn-sm" onclick="loadSample('olx')">OLX Sample</button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: RESULTS -->
+            <div class="col-lg-6">
+
+                <!-- Deal Score Card (shown after extraction) -->
+                <div class="result-panel" id="dealScorePanel">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex align-items-start justify-content-between">
+                                <div>
+                                    <div class="text-muted" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Deal Assessment</div>
+                                    <div class="d-flex align-items-center gap-2 mt-1">
+                                        <span class="badge fs-6" id="dealTagBadge" style="padding:6px 14px">—</span>
+                                        <span class="fw-700" style="font-size:20px" id="dealScoreNum">—</span>
+                                        <span class="text-muted">/100</span>
+                                    </div>
+                                </div>
+                                <div id="actionBtnWrap"></div>
+                            </div>
+                            <div class="deal-score-bar mt-2">
+                                <div class="deal-score-fill" id="dealScoreFill" style="width:0%;background:#16a34a"></div>
+                            </div>
+                            <div class="row g-2 mt-2" id="vehicleSummaryRow"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- JSON Output Card -->
+                <div class="card result-panel" id="jsonPanel">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <span class="fw-600"><i class="fas fa-code me-2" style="color:#FF6B00"></i>Extracted JSON</span>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-secondary btn-sm copy-btn" onclick="copyJson()">
+                                <i class="fas fa-copy me-1"></i>Copy
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm copy-btn" onclick="downloadJson()">
+                                <i class="fas fa-download me-1"></i>Download
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="json-display" id="jsonDisplay">// Extracted JSON will appear here</div>
+                    </div>
+                </div>
+
+                <!-- Loading placeholder -->
+                <div class="card" id="loadingPanel" style="display:none">
+                    <div class="card-body text-center py-5">
+                        <div class="mb-3" style="font-size:40px;color:#FF6B00">
+                            <i class="fas fa-robot spin"></i>
+                        </div>
+                        <h6 class="fw-700">AI is extracting data...</h6>
+                        <p class="text-muted mb-0" style="font-size:13px" id="loadingMsg">Analyzing page content with Claude AI</p>
+                    </div>
+                </div>
+
+                <!-- Error panel -->
+                <div class="alert alert-danger result-panel" id="errorPanel" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <span id="errorMsg"></span>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- EXTRACTION HISTORY -->
+        <div class="card mt-4" id="historyCard" style="display:none">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <span class="fw-600"><i class="fas fa-history me-2" style="color:#FF6B00"></i>Extraction History <span class="badge bg-secondary" id="historyCount">0</span></span>
+                <button class="btn btn-outline-danger btn-sm" onclick="clearHistory()">
+                    <i class="fas fa-trash me-1"></i>Clear History
+                </button>
+            </div>
+            <div class="card-body" id="historyList"></div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+/* ─────────────────────────────────────────────────────────────
+   USED CAR EXTRACTOR — frontend JS
+───────────────────────────────────────────────────────────── */
+
+let currentMode = 'paste';
+let extractionHistory = JSON.parse(localStorage.getItem('uce_history') || '[]');
+
+// ── SAMPLES ─────────────────────────────────────────────────
+const SAMPLES = {
+  spinny: `Spinny | 2021 Honda City 5th Gen ZX
+Price: ₹13,75,000
+KM Driven: 18,220 km | Fuel Type: Petrol
+Transmission: Automatic | Colour: Silver
+Owner: 1st Owner | Registration: Delhi (DL)
+Spinny Assured | Spinny Shield warranty
+Seller: Spinny Hub, Gurugram`,
+
+  cars24: `CARS24 | 2019 Maruti Suzuki Swift VXI
+Fair Price: ₹5,40,000
+61,234 km | Petrol | Manual
+1st Owner | Registered: Maharashtra (MH)
+Color: Red | City: Pune
+Seller: CARS24 Certified
+Phone: Not disclosed`,
+
+  olx: `OLX Autos | 2018 Hyundai i20 Asta
+Price: ₹6,20,000 (negotiable)
+KM: 45,500 km | Diesel | Manual
+2nd Owner | Bangalore
+Color: White
+Contact: Rajesh Kumar (Individual Seller)
+Phone: 9876543210
+WhatsApp available`
+};
+
+function loadSample(type) {
+    document.getElementById('contentArea').value = SAMPLES[type];
+    updateCharCount();
+    document.getElementById('sourceUrl').value = type === 'spinny' ? 'https://www.spinny.com/used-cars/honda-city/'
+        : type === 'cars24' ? 'https://www.cars24.com/buy-used-maruti-suzuki-swift-cars-pune/'
+        : 'https://www.olx.in/hyderabad_g4058680/q-hyundai-i20';
+    switchMode('paste');
+}
+
+// ── MODE TOGGLE ──────────────────────────────────────────────
+function switchMode(mode) {
+    currentMode = mode;
+    document.getElementById('urlInputWrap').style.display = mode === 'url' ? 'block' : 'none';
+    document.getElementById('contentArea').closest('.mb-3').style.display = mode === 'url' ? 'none' : 'block';
+    document.getElementById('tabPaste').classList.toggle('active', mode === 'paste');
+    document.getElementById('tabUrl').classList.toggle('active', mode === 'url');
+}
+
+// ── CHAR COUNT ───────────────────────────────────────────────
+document.getElementById('contentArea').addEventListener('input', updateCharCount);
+function updateCharCount() {
+    const len = document.getElementById('contentArea').value.length;
+    document.getElementById('charCount').textContent = len.toLocaleString('en-IN') + ' characters';
+}
+
+// ── CLEAR ────────────────────────────────────────────────────
+function clearInput() {
+    document.getElementById('contentArea').value = '';
+    document.getElementById('sourceUrl').value = '';
+    document.getElementById('urlInput').value = '';
+    updateCharCount();
+    hideAllResults();
+}
+
+// ── FETCH FROM URL ───────────────────────────────────────────
+async function fetchUrl() {
+    const url = document.getElementById('urlInput').value.trim();
+    if (!url) return alert('Enter a URL first');
+    showLoading('Fetching page from ' + url + '...');
+    try {
+        const res = await fetch('/api/used-car/extract-url', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+        });
+        const data = await res.json();
+        if (data.ok) {
+            document.getElementById('sourceUrl').value = url;
+            // Switch to paste mode and show fetched content preview
+            switchMode('paste');
+            document.getElementById('contentArea').value = data.preview ? '(Page fetched successfully — ' + data.preview.length + ' chars extracted)\n\n' + data.preview + '...' : '';
+            updateCharCount();
+            renderResult(data.json);
+        } else {
+            showError(data.error || 'Failed to fetch URL');
+        }
+    } catch (e) {
+        showError('Network error: ' + e.message);
+    }
+}
+
+// ── EXTRACT ──────────────────────────────────────────────────
+async function extract() {
+    const content   = document.getElementById('contentArea').value.trim();
+    const sourceUrl = document.getElementById('sourceUrl').value.trim();
+
+    if (!content) { alert('Paste some content first, or load a sample.'); return; }
+
+    showLoading('Sending to Claude AI for extraction...');
+
+    try {
+        const res = await fetch('/api/used-car/extract', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content, url: sourceUrl })
+        });
+        const data = await res.json();
+        if (data.ok) {
+            renderResult(data.json);
+            saveHistory(data.json, sourceUrl);
+        } else {
+            showError(data.error || 'Extraction failed');
+        }
+    } catch (e) {
+        showError('Network error: ' + e.message);
+    }
+}
+
+// ── RENDER RESULT ────────────────────────────────────────────
+function renderResult(jsonStr) {
+    hideAllResults();
+
+    // Syntax highlight
+    document.getElementById('jsonDisplay').innerHTML = syntaxHighlight(jsonStr);
+    document.getElementById('jsonPanel').classList.add('show');
+
+    try {
+        const obj = JSON.parse(jsonStr);
+        const v = obj.vehicle || {};
+        const d = obj.deal || {};
+
+        // Deal score card
+        const tag = d.dealTag || 'NORMAL';
+        const score = d.dealScore || 0;
+        const action = d.recommendedAction || 'NEED_REVIEW';
+
+        const tagEl = document.getElementById('dealTagBadge');
+        tagEl.textContent = tag.replace(/_/g, ' ');
+        tagEl.className = 'badge fs-6 tag-' + tag;
+
+        document.getElementById('dealScoreNum').textContent = score;
+
+        const fill = document.getElementById('dealScoreFill');
+        fill.style.width = score + '%';
+        fill.style.background = score >= 80 ? '#16a34a' : score >= 60 ? '#2563eb' : score >= 40 ? '#d97706' : '#dc2626';
+
+        // Action button
+        const actionColors = { CREATE_DEAL: 'success', SAVE_INVENTORY: 'primary', NEED_REVIEW: 'warning' };
+        const actionIcons  = { CREATE_DEAL: 'fa-plus-circle', SAVE_INVENTORY: 'fa-archive', NEED_REVIEW: 'fa-search' };
+        document.getElementById('actionBtnWrap').innerHTML = `
+            <button class="btn btn-${actionColors[action] || 'secondary'} btn-sm fw-700" onclick="handleAction('${action}', ${JSON.stringify(jsonStr).replace(/'/g, "\\'")})" title="${action}">
+                <i class="fas ${actionIcons[action] || 'fa-question'} me-1"></i>${action.replace(/_/g, ' ')}
+            </button>`;
+
+        // Vehicle summary
+        const summaryItems = [
+            { label: 'Brand',       val: v.brand || '—' },
+            { label: 'Model',       val: [v.model, v.variant].filter(Boolean).join(' ') || '—' },
+            { label: 'Year',        val: v.year || '—' },
+            { label: 'Price',       val: v.price ? '₹' + Number(v.price).toLocaleString('en-IN') : '—' },
+            { label: 'KM Driven',   val: v.kmDriven ? Number(v.kmDriven).toLocaleString('en-IN') + ' km' : '—' },
+            { label: 'Fuel',        val: v.fuelType || '—' },
+            { label: 'Owner',       val: v.ownerType ? v.ownerType + ' Owner' : '—' },
+            { label: 'City',        val: v.city || '—' },
+        ];
+        document.getElementById('vehicleSummaryRow').innerHTML = summaryItems.map(i => `
+            <div class="col-6">
+                <div style="background:#f8fafc;border-radius:6px;padding:7px 10px">
+                    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#94a3b8">${i.label}</div>
+                    <div style="font-size:13px;font-weight:600;color:#1e293b">${i.val}</div>
+                </div>
+            </div>`).join('');
+
+        document.getElementById('dealScorePanel').classList.add('show');
+    } catch(e) {
+        // JSON parse error — just show raw
+    }
+}
+
+// ── HANDLE ACTION ────────────────────────────────────────────
+function handleAction(action, jsonStr) {
+    try {
+        const data = JSON.parse(jsonStr);
+        const v = data.vehicle || {};
+        if (action === 'CREATE_DEAL') {
+            // Redirect to deal management with prefill params
+            const params = new URLSearchParams({
+                prefill: '1',
+                brand: v.brand || '',
+                model: v.model || '',
+                price: v.price || '',
+                city: v.city || ''
+            });
+            if (confirm(`Create a deal for ${v.year || ''} ${v.brand} ${v.model} (₹${Number(v.price||0).toLocaleString('en-IN')})?\n\nThis will open Deal Management.`)) {
+                window.location.href = '/admin/deals?' + params.toString();
+            }
+        } else if (action === 'SAVE_INVENTORY') {
+            if (confirm(`Save ${v.year || ''} ${v.brand} ${v.model} to inventory?\n\nThis will open Vehicle Import.`)) {
+                window.location.href = '/admin/vehicles/import';
+            }
+        } else {
+            alert('Marked for review. You can copy the JSON and process manually.');
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+// ── HISTORY ──────────────────────────────────────────────────
+function saveHistory(jsonStr, url) {
+    try {
+        const obj = JSON.parse(jsonStr);
+        const v = obj.vehicle || {};
+        const d = obj.deal || {};
+        const entry = {
+            id: Date.now(),
+            label: [v.year, v.brand, v.model].filter(Boolean).join(' ') || 'Unknown Car',
+            price: v.price ? '₹' + Number(v.price).toLocaleString('en-IN') : '—',
+            dealTag: d.dealTag || 'NORMAL',
+            score: d.dealScore || 0,
+            url: url || '',
+            json: jsonStr,
+            ts: new Date().toLocaleString('en-IN')
+        };
+        extractionHistory.unshift(entry);
+        if (extractionHistory.length > 20) extractionHistory.pop();
+        localStorage.setItem('uce_history', JSON.stringify(extractionHistory));
+        renderHistory();
+    } catch (e) {}
+}
+
+function renderHistory() {
+    const card = document.getElementById('historyCard');
+    const list = document.getElementById('historyList');
+    if (extractionHistory.length === 0) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+    document.getElementById('historyCount').textContent = extractionHistory.length;
+    list.innerHTML = extractionHistory.map(h => `
+        <div class="history-item" onclick="loadFromHistory(${h.id})">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="fw-600">${h.label}</span>
+                    <span class="text-muted ms-2">${h.price}</span>
+                    <span class="badge ms-2 tag-${h.dealTag}" style="font-size:10px">${h.dealTag.replace(/_/g,' ')} · ${h.score}/100</span>
+                </div>
+                <small class="text-muted">${h.ts}</small>
+            </div>
+            ${h.url ? `<small class="text-muted" style="font-size:11px"><i class="fas fa-link me-1"></i>${h.url.substring(0,60)}...</small>` : ''}
+        </div>`).join('');
+}
+
+function loadFromHistory(id) {
+    const entry = extractionHistory.find(h => h.id === id);
+    if (entry) renderResult(entry.json);
+}
+
+function clearHistory() {
+    if (confirm('Clear all extraction history?')) {
+        extractionHistory = [];
+        localStorage.removeItem('uce_history');
+        renderHistory();
+    }
+}
+
+// ── SYNTAX HIGHLIGHT ─────────────────────────────────────────
+function syntaxHighlight(json) {
+    return json
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, m => {
+            if (/^"/.test(m)) {
+                return /:$/.test(m)
+                    ? `<span class="json-key">${m}</span>`
+                    : `<span class="json-str">${m}</span>`;
+            }
+            if (/true|false/.test(m)) return `<span class="json-bool">${m}</span>`;
+            if (/null/.test(m))       return `<span class="json-null">${m}</span>`;
+            return `<span class="json-num">${m}</span>`;
+        });
+}
+
+// ── COPY / DOWNLOAD ──────────────────────────────────────────
+function copyJson() {
+    const json = document.getElementById('jsonDisplay').innerText;
+    navigator.clipboard.writeText(json).then(() => {
+        const btn = document.querySelector('.copy-btn');
+        btn.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
+        setTimeout(() => btn.innerHTML = '<i class="fas fa-copy me-1"></i>Copy', 1500);
+    });
+}
+function downloadJson() {
+    const json = document.getElementById('jsonDisplay').innerText;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+    a.download = 'used-car-' + Date.now() + '.json';
+    a.click();
+}
+
+// ── UI HELPERS ───────────────────────────────────────────────
+function showLoading(msg) {
+    hideAllResults();
+    document.getElementById('loadingPanel').style.display = 'block';
+    document.getElementById('loadingMsg').textContent = msg || 'Processing...';
+    document.getElementById('extractBtn').disabled = true;
+    document.getElementById('extractBtn').innerHTML = '<i class="fas fa-spinner spin me-2"></i>Extracting...';
+}
+function hideAllResults() {
+    document.getElementById('loadingPanel').style.display = 'none';
+    document.getElementById('jsonPanel').classList.remove('show');
+    document.getElementById('dealScorePanel').classList.remove('show');
+    document.getElementById('errorPanel').classList.remove('show');
+    document.getElementById('extractBtn').disabled = false;
+    document.getElementById('extractBtn').innerHTML = '<i class="fas fa-robot me-2"></i>Extract &amp; Score Deal';
+}
+function showError(msg) {
+    hideAllResults();
+    document.getElementById('errorMsg').textContent = msg;
+    document.getElementById('errorPanel').classList.add('show');
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+renderHistory();
+</script>
+</body>
+</html>

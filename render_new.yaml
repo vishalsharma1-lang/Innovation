@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: kiro
+    runtime: docker
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: render

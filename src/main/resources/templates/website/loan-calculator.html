@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Car Loan Eligibility Calculator 2025 — CarDekho Deals</title>
+  <meta name="description" content="Check your car loan eligibility instantly. Calculate maximum loan amount based on your income, expenses and existing EMIs."/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+  <link th:href="@{/css/website.css}" rel="stylesheet">
+  <style>
+    .lc-wrap { margin-top: 89px; padding-bottom: 60px; }
+
+    /* ── Hero ── */
+    .lc-hero {
+      background: linear-gradient(135deg, #1a1a2e 0%, #0f2040 60%, #16213e 100%);
+      padding: 36px 0 32px;
+      position: relative;
+      overflow: hidden;
+    }
+    .lc-hero::after {
+      content: '';
+      position: absolute;
+      top: -40%;
+      right: -5%;
+      width: 420px;
+      height: 420px;
+      background: radial-gradient(circle, rgba(239,74,35,.13) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .lc-hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(239,74,35,.15);
+      border: 1px solid rgba(239,74,35,.3);
+      color: #fba07a;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      padding: 5px 13px;
+      border-radius: 50px;
+      margin-bottom: 14px;
+    }
+    .lc-hero h1 {
+      color: #fff;
+      font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+      font-weight: 900;
+      line-height: 1.15;
+      margin-bottom: 10px;
+    }
+    .lc-hero h1 span { color: var(--primary); }
+    .lc-hero p { color: rgba(255,255,255,.55); font-size: .88rem; margin: 0; }
+
+    /* ── Cards ── */
+    .lc-card {
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid #f0f0f0;
+      box-shadow: 0 2px 12px rgba(0,0,0,.06);
+      overflow: hidden;
+    }
+    .lc-card-header {
+      background: linear-gradient(90deg, var(--primary) 0%, #f97316 100%);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .lc-card-header .title { color: #fff; font-weight: 800; font-size: .9rem; }
+
+    /* Progress dots */
+    .progress-dots { display: flex; gap: 5px; }
+    .progress-dots span {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: rgba(255,255,255,.3);
+      transition: background .3s;
+    }
+    .progress-dots span.filled { background: #fff; }
+
+    /* ── Form fields ── */
+    .lc-field label {
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      color: #6b7280;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .lc-input-wrap { position: relative; }
+    .lc-input-wrap .prefix,
+    .lc-input-wrap .suffix {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: .82rem;
+      font-weight: 700;
+      color: #9ca3af;
+      pointer-events: none;
+    }
+    .lc-input-wrap .prefix { left: 12px; }
+    .lc-input-wrap .suffix { right: 12px; }
+    .lc-input {
+      width: 100%;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 11px 14px;
+      font-size: .875rem;
+      background: #f9fafb;
+      transition: border-color .2s, background .2s, box-shadow .2s;
+      outline: none;
+    }
+    .lc-input:focus {
+      border-color: var(--primary);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(239,74,35,.1);
+    }
+    .lc-input.has-prefix { padding-left: 26px; }
+    .lc-input.has-suffix { padding-right: 38px; }
+
+    /* Formula note */
+    .lc-formula {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: .78rem;
+      color: #1d4ed8;
+    }
+    .lc-formula .fw-bold { color: #1e40af; font-size: .8rem; margin-bottom: 6px; }
+    .lc-formula li { margin-bottom: 3px; }
+
+    /* ── Result panel ── */
+    .lc-result-empty {
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid #f0f0f0;
+      text-align: center;
+      padding: 60px 30px;
+    }
+    .lc-result-empty .icon-box {
+      width: 72px; height: 72px;
+      background: linear-gradient(135deg, #fff7f5, #fee2d5);
+      border-radius: 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem;
+      margin: 0 auto 18px;
+    }
+
+    /* Not eligible */
+    .lc-not-eligible {
+      background: #fff;
+      border-radius: 16px;
+      border: 1.5px solid #fecaca;
+      padding: 40px 28px;
+      text-align: center;
+    }
+
+    /* Max loan highlight */
+    .lc-max-loan {
+      background: linear-gradient(135deg, #fff7f0 0%, #fff3e0 100%);
+      border: 1.5px solid #fed7aa;
+      border-radius: 14px;
+      padding: 20px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .lc-max-loan .loan-icon {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, var(--primary), #f97316);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      flex-shrink: 0;
+      box-shadow: 0 6px 20px rgba(239,74,35,.3);
+    }
+    .lc-max-loan .loan-label { font-size: .72rem; font-weight: 700; color: #92400e; text-transform: uppercase; letter-spacing: .05em; }
+    .lc-max-loan .loan-value { font-size: 2rem; font-weight: 900; color: #1f2937; line-height: 1; }
+    .lc-max-loan .loan-sub   { font-size: .75rem; color: #9ca3af; margin-top: 3px; }
+
+    /* Stat box */
+    .lc-stat {
+      background: #f9fafb;
+      border: 1px solid #f0f0f0;
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .lc-stat .s-icon { font-size: 1.2rem; margin-bottom: 6px; }
+    .lc-stat .s-label { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #9ca3af; margin-bottom: 2px; }
+    .lc-stat .s-value { font-size: 1.1rem; font-weight: 900; color: #1f2937; }
+
+    /* Breakdown bar */
+    .breakdown-row { margin-bottom: 14px; }
+    .breakdown-row .bd-label { font-size: .78rem; font-weight: 600; color: #374151; }
+    .breakdown-row .bd-value { font-size: .78rem; font-weight: 700; }
+    .breakdown-row .bd-value.pos { color: #15803d; }
+    .breakdown-row .bd-value.neg { color: #dc2626; }
+    .bd-bar { height: 6px; border-radius: 99px; background: #f3f4f6; margin-top: 5px; overflow: hidden; }
+    .bd-bar-fill { height: 100%; border-radius: 99px; transition: width .6s ease; }
+
+    /* Tip card */
+    .lc-tip {
+      background: #fff;
+      border-radius: 14px;
+      border-left: 4px solid var(--primary);
+      border-top: 1px solid #f0f0f0;
+      border-right: 1px solid #f0f0f0;
+      border-bottom: 1px solid #f0f0f0;
+      padding: 16px 18px;
+    }
+
+    .btn-calc {
+      width: 100%;
+      background: linear-gradient(90deg, var(--primary) 0%, #f97316 100%);
+      color: #fff;
+      font-weight: 800;
+      font-size: .9rem;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      cursor: pointer;
+      transition: opacity .2s, transform .1s;
+      box-shadow: 0 4px 16px rgba(239,74,35,.3);
+    }
+    .btn-calc:hover { opacity: .93; }
+    .btn-calc:active { transform: scale(.98); }
+
+    @media(max-width:991px) { .lc-wrap { margin-top: 56px; } }
+  </style>
+</head>
+<body>
+
+<div th:replace="~{website/fragments/layout :: nav('loan-calculator')}"></div>
+
+<div class="lc-wrap">
+
+  <!-- Hero -->
+  <div class="lc-hero">
+    <div class="container">
+      <div class="lc-hero-badge">
+        <i class="fas fa-hand-holding-usd"></i> LOAN ELIGIBILITY CALCULATOR
+      </div>
+      <h1>Check Your <span>Car Loan</span><br>Eligibility Instantly</h1>
+      <p>Enter your income &amp; expense details — find your maximum eligible loan amount in seconds.</p>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="container mt-4">
+    <div class="row g-4">
+
+      <!-- ── Left: Form ── -->
+      <div class="col-lg-5">
+        <div class="lc-card" style="position:sticky;top:100px">
+          <div class="lc-card-header">
+            <span class="title"><i class="fas fa-rupee-sign me-2"></i>Your Financial Details</span>
+            <div class="progress-dots" id="progressDots">
+              <span></span><span></span><span></span>
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+          <div class="p-4">
+            <div class="row g-3">
+
+              <!-- Monthly Income -->
+              <div class="col-12 lc-field">
+                <label><i class="fas fa-briefcase me-1"></i> Monthly Income</label>
+                <div class="lc-input-wrap">
+                  <span class="prefix">₹</span>
+                  <input type="number" id="monthly_income" class="lc-input has-prefix" placeholder="e.g. 50000" min="0" oninput="onInput()">
+                </div>
+              </div>
+
+              <!-- Other Income -->
+              <div class="col-12 lc-field">
+                <label><i class="fas fa-chart-line me-1"></i> Other Income</label>
+                <div class="lc-input-wrap">
+                  <span class="prefix">₹</span>
+                  <input type="number" id="other_income" class="lc-input has-prefix" placeholder="e.g. 5000" min="0" oninput="onInput()">
+                </div>
+              </div>
+
+              <!-- Existing EMI -->
+              <div class="col-12 lc-field">
+                <label><i class="fas fa-credit-card me-1"></i> Existing EMI</label>
+                <div class="lc-input-wrap">
+                  <span class="prefix">₹</span>
+                  <input type="number" id="existing_emi" class="lc-input has-prefix" placeholder="e.g. 8000" min="0" oninput="onInput()">
+                </div>
+              </div>
+
+              <!-- Monthly Expenses -->
+              <div class="col-12 lc-field">
+                <label><i class="fas fa-receipt me-1"></i> Monthly Expenses</label>
+                <div class="lc-input-wrap">
+                  <span class="prefix">₹</span>
+                  <input type="number" id="monthly_expenses" class="lc-input has-prefix" placeholder="e.g. 15000" min="0" oninput="onInput()">
+                </div>
+              </div>
+
+              <!-- Interest Rate -->
+              <div class="col-6 lc-field">
+                <label><i class="fas fa-percentage me-1"></i> Interest Rate p.a.</label>
+                <div class="lc-input-wrap">
+                  <input type="number" id="interest_rate" class="lc-input has-suffix" placeholder="e.g. 10.5" min="0" step="0.1" oninput="onInput()">
+                  <span class="suffix">%</span>
+                </div>
+              </div>
+
+              <!-- Tenure -->
+              <div class="col-6 lc-field">
+                <label><i class="fas fa-calendar-alt me-1"></i> Tenure</label>
+                <div class="lc-input-wrap">
+                  <input type="number" id="tenure" class="lc-input has-suffix" placeholder="e.g. 5" min="1" max="30" oninput="onInput()">
+                  <span class="suffix">yrs</span>
+                </div>
+              </div>
+
+            </div><!-- /row -->
+
+            <button class="btn-calc mt-4" onclick="calculate()">
+              <i class="fas fa-search me-2"></i>Check Loan Eligibility
+            </button>
+
+            <!-- Formula note -->
+            <div class="lc-formula mt-4">
+              <div class="fw-bold mb-2"><i class="fas fa-info-circle me-1"></i>How it's calculated</div>
+              <ul class="ps-3 mb-0">
+                <li>Net Income = Income + Other − Expenses − EMI</li>
+                <li>Max EMI = 50% of Net Income</li>
+                <li>Loan = Max EMI × EMI factor (rate &amp; tenure)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Right: Results ── -->
+      <div class="col-lg-7">
+
+        <!-- Empty state -->
+        <div class="lc-result-empty" id="resultEmpty">
+          <div class="icon-box">🏦</div>
+          <h5 class="fw-bold mb-2">Check Your Eligibility</h5>
+          <p class="text-muted small mb-4">Fill in your income and expense details on the left to find your maximum eligible car loan amount.</p>
+          <div class="row g-3 justify-content-center" style="max-width:360px;margin:0 auto">
+            <div class="col-4">
+              <div class="lc-stat text-center">
+                <div class="s-icon">💼</div>
+                <div class="s-label">Income</div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="lc-stat text-center">
+                <div class="s-icon">🏦</div>
+                <div class="s-label">Loan Amt</div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="lc-stat text-center">
+                <div class="s-icon">📆</div>
+                <div class="s-label">EMI</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Not eligible -->
+        <div class="lc-not-eligible d-none" id="resultIneligible">
+          <div style="font-size:3rem;margin-bottom:12px">❌</div>
+          <h5 class="fw-bold text-danger mb-2">Not Eligible</h5>
+          <p class="text-muted small mb-3">
+            Your net income is <strong id="netIncomeDisplay" class="text-danger"></strong>.<br>
+            After expenses and existing EMIs, there's no disposable income for a new loan.
+          </p>
+          <div class="text-start bg-danger bg-opacity-10 border border-danger border-opacity-25 rounded-3 p-3 small text-danger-emphasis">
+            <div class="fw-bold mb-2">Suggestions to improve eligibility:</div>
+            <ul class="mb-0 ps-3">
+              <li>Reduce monthly expenses</li>
+              <li>Close or reduce existing EMIs first</li>
+              <li>Add a co-applicant with income</li>
+              <li>Increase income or add other income sources</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Eligible results -->
+        <div class="d-none" id="resultEligible">
+
+          <!-- Max loan highlight -->
+          <div class="lc-card mb-4">
+            <div class="lc-card-header">
+              <span class="title">Eligibility Result</span>
+              <span class="badge bg-white bg-opacity-20 text-white fw-bold" style="font-size:.7rem">✅ ELIGIBLE</span>
+            </div>
+            <div class="p-3 p-md-4">
+              <div class="lc-max-loan mb-3">
+                <div>
+                  <div class="loan-label">Max Eligible Loan</div>
+                  <div class="loan-value" id="maxLoanDisplay">—</div>
+                  <div class="loan-sub">at maximum eligible EMI</div>
+                </div>
+                <div class="loan-icon">🏠</div>
+              </div>
+              <div class="row g-3">
+                <div class="col-6 col-md-3">
+                  <div class="lc-stat">
+                    <div class="s-icon">💰</div>
+                    <div class="s-label">Net Income</div>
+                    <div class="s-value" id="netIncomeResult">—</div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="lc-stat">
+                    <div class="s-icon">📆</div>
+                    <div class="s-label">Max EMI</div>
+                    <div class="s-value" id="maxEmiResult">—</div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="lc-stat">
+                    <div class="s-icon">📊</div>
+                    <div class="s-label">EMI / Income</div>
+                    <div class="s-value" id="emiRatioResult">—</div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <div class="lc-stat">
+                    <div class="s-icon">📅</div>
+                    <div class="s-label">Tenure</div>
+                    <div class="s-value" id="tenureResult">—</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Income breakdown -->
+          <div class="lc-card mb-4">
+            <div class="p-3 p-md-4">
+              <h6 class="fw-bold mb-3" style="font-size:.85rem">
+                <i class="fas fa-chart-bar text-primary me-2"></i>Income Breakdown
+              </h6>
+              <div id="breakdownBars"></div>
+              <div class="d-flex justify-content-between align-items-center pt-3 mt-2 border-top">
+                <span class="fw-bold" style="font-size:.85rem">Net Monthly Income</span>
+                <span class="fw-black" id="netIncomeBreakdown" style="font-size:1rem;color:#1f2937">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tips -->
+          <div class="lc-tip">
+            <div class="d-flex gap-3">
+              <div style="font-size:1.5rem;flex-shrink:0">💡</div>
+              <div>
+                <div class="fw-bold mb-1" style="font-size:.85rem">Improve Your Loan Eligibility</div>
+                <ul class="small text-muted mb-0 ps-3" style="line-height:1.8">
+                  <li>Add a co-applicant to increase total income considered</li>
+                  <li>Close smaller existing loans before applying</li>
+                  <li>A longer tenure reduces EMI &amp; increases eligible loan amount</li>
+                  <li>Maintain a CIBIL score above 750 for better interest rates</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /row -->
+  </div><!-- /container -->
+</div>
+
+<div th:replace="~{website/fragments/layout :: footer}"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function() {
+  var fields = ['monthly_income','other_income','existing_emi','monthly_expenses','interest_rate','tenure'];
+
+  function fmt(n) {
+    if (!n && n !== 0) return '—';
+    var abs = Math.abs(n);
+    var prefix = n < 0 ? '−₹' : '₹';
+    if (abs >= 10000000) return prefix + (abs / 10000000).toFixed(2) + ' Cr';
+    if (abs >= 100000)   return prefix + (abs / 100000).toFixed(2) + ' L';
+    return prefix + Math.round(abs).toLocaleString('en-IN');
+  }
+
+  window.onInput = function() {
+    var filled = fields.filter(function(id) { return document.getElementById(id).value.trim() !== ''; }).length;
+    var dots = document.querySelectorAll('#progressDots span');
+    dots.forEach(function(d, i) { d.classList.toggle('filled', i < filled); });
+  };
+
+  window.calculate = function() {
+    var income   = parseFloat(document.getElementById('monthly_income').value)   || 0;
+    var other    = parseFloat(document.getElementById('other_income').value)     || 0;
+    var emi      = parseFloat(document.getElementById('existing_emi').value)     || 0;
+    var expenses = parseFloat(document.getElementById('monthly_expenses').value) || 0;
+    var rate     = parseFloat(document.getElementById('interest_rate').value)    || 0;
+    var years    = parseFloat(document.getElementById('tenure').value)           || 0;
+
+    var netIncome = income + other - expenses - emi;
+
+    document.getElementById('resultEmpty').classList.add('d-none');
+    document.getElementById('resultIneligible').classList.add('d-none');
+    document.getElementById('resultEligible').classList.add('d-none');
+
+    if (netIncome <= 0) {
+      document.getElementById('netIncomeDisplay').textContent = fmt(netIncome);
+      document.getElementById('resultIneligible').classList.remove('d-none');
+      return;
+    }
+
+    var maxEMI = netIncome * 0.5;
+    var r = rate / (12 * 100);
+    var n = years * 12;
+    var maxLoan = 0;
+    if (r === 0 || n === 0) {
+      maxLoan = maxEMI * n;
+    } else {
+      maxLoan = maxEMI * ((Math.pow(1 + r, n) - 1) / (r * Math.pow(1 + r, n)));
+    }
+    maxLoan = Math.floor(maxLoan);
+
+    document.getElementById('maxLoanDisplay').textContent   = fmt(maxLoan);
+    document.getElementById('netIncomeResult').textContent  = fmt(netIncome);
+    document.getElementById('maxEmiResult').textContent     = fmt(maxEMI);
+    document.getElementById('emiRatioResult').textContent   = ((maxEMI / netIncome) * 100).toFixed(0) + '%';
+    document.getElementById('tenureResult').textContent     = years + ' yrs';
+    document.getElementById('netIncomeBreakdown').textContent = fmt(netIncome);
+
+    // Breakdown bars
+    var total = income + other;
+    var rows = [
+      { label: 'Monthly Income',   value: income,    color: '#22c55e', neg: false },
+      { label: 'Other Income',     value: other,     color: '#3b82f6', neg: false },
+      { label: 'Monthly Expenses', value: expenses,  color: '#ef4444', neg: true  },
+      { label: 'Existing EMI',     value: emi,       color: '#f97316', neg: true  },
+    ];
+    var html = rows.map(function(row) {
+      var pct = total > 0 ? Math.min(row.value / total * 100, 100) : 0;
+      var valClass = row.neg ? 'neg' : 'pos';
+      var prefix   = row.neg ? '−' : '+';
+      return '<div class="breakdown-row">' +
+        '<div class="d-flex justify-content-between">' +
+          '<span class="bd-label">' + row.label + '</span>' +
+          '<span class="bd-value ' + valClass + '">' + prefix + fmt(row.value) + '</span>' +
+        '</div>' +
+        '<div class="bd-bar"><div class="bd-bar-fill" style="width:' + pct + '%;background:' + row.color + '"></div></div>' +
+      '</div>';
+    }).join('');
+    document.getElementById('breakdownBars').innerHTML = html;
+
+    document.getElementById('resultEligible').classList.remove('d-none');
+  };
+})();
+</script>
+</body>
+</html>

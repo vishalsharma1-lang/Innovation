@@ -23,15 +23,26 @@ public interface DealerDealRepository extends JpaRepository<DealerDeal, Long> {
     @Query("SELECT d FROM DealerDeal d WHERE d.city = :city AND d.isActive = true AND d.isDeleted = false ORDER BY d.priority DESC, d.totalSavings DESC")
     List<DealerDeal> findByCityAndIsActiveTrueAndIsDeletedFalseOrderByTotalSavingsDesc(@Param("city") String city);
 
-    @Query("SELECT d FROM DealerDeal d WHERE d.isActive = true AND d.isDeleted = false AND d.isFeatured = true AND (d.endDate IS NULL OR d.endDate >= CURRENT_DATE) ORDER BY d.priority DESC, d.totalSavings DESC")
+    // NEW car deals only — used on homepage featured section and vehicle listing page
+    @Query("SELECT d FROM DealerDeal d WHERE d.isActive = true AND d.isDeleted = false AND d.isFeatured = true AND (d.carType IS NULL OR d.carType <> 'USED') AND (d.endDate IS NULL OR d.endDate >= CURRENT_DATE) ORDER BY d.priority DESC, d.totalSavings DESC")
     List<DealerDeal> findFeaturedActiveDeals();
 
-    @Query("SELECT d FROM DealerDeal d WHERE d.isActive = true AND d.isDeleted = false AND (d.endDate IS NULL OR d.endDate >= CURRENT_DATE) ORDER BY d.priority DESC, d.createdAt DESC")
+    // NEW car deals only — used on vehicle listing/detail pages
+    @Query("SELECT d FROM DealerDeal d WHERE d.isActive = true AND d.isDeleted = false AND (d.carType IS NULL OR d.carType <> 'USED') AND (d.endDate IS NULL OR d.endDate >= CURRENT_DATE) ORDER BY d.priority DESC, d.createdAt DESC")
     List<DealerDeal> findActiveDeals();
 
-    @Query("SELECT d FROM DealerDeal d WHERE d.isActive = true AND d.isDeleted = false AND (d.endDate IS NULL OR d.endDate >= CURRENT_DATE) AND LOWER(d.vehicleName) LIKE LOWER(CONCAT('%', :brand, '%')) ORDER BY d.priority DESC, d.totalSavings DESC")
+    // All deals (NEW + USED) — for admin listing only
+    @Query("SELECT d FROM DealerDeal d WHERE d.isActive = true AND d.isDeleted = false AND (d.endDate IS NULL OR d.endDate >= CURRENT_DATE) ORDER BY d.priority DESC, d.createdAt DESC")
+    List<DealerDeal> findAllActiveDeals();
+
+    @Query("SELECT d FROM DealerDeal d WHERE d.isActive = true AND d.isDeleted = false AND (d.carType IS NULL OR d.carType <> 'USED') AND (d.endDate IS NULL OR d.endDate >= CURRENT_DATE) AND LOWER(d.vehicleName) LIKE LOWER(CONCAT('%', :brand, '%')) ORDER BY d.priority DESC, d.totalSavings DESC")
     List<DealerDeal> findActiveDealsByBrand(@Param("brand") String brand);
 
-    @Query("SELECT COUNT(d) FROM DealerDeal d WHERE d.isActive = true AND d.isDeleted = false AND (d.endDate IS NULL OR d.endDate >= CURRENT_DATE)")
+    @Query("SELECT COUNT(d) FROM DealerDeal d WHERE d.isActive = true AND d.isDeleted = false AND (d.carType IS NULL OR d.carType <> 'USED') AND (d.endDate IS NULL OR d.endDate >= CURRENT_DATE)")
     long countActiveDeals();
+
+    List<DealerDeal> findByCarTypeAndIsActiveTrueAndIsDeletedFalse(String carType);
+
+    @Query("SELECT d FROM DealerDeal d WHERE d.carType = 'USED' AND d.isActive = true AND d.isDeleted = false AND (d.endDate IS NULL OR d.endDate >= CURRENT_DATE) ORDER BY d.priority DESC, d.createdAt DESC")
+    List<DealerDeal> findActiveUsedCarDeals();
 }

@@ -88,11 +88,29 @@ public class WebsiteController {
         }
         model.addAttribute("brandLogos", brandLogos);
 
-        // Featured deals for homepage
+        // Featured NEW car deals for homepage (queries already exclude USED deals)
         List<DealerDeal> featuredDeals = dealRepo.findFeaturedActiveDeals();
         if (featuredDeals.isEmpty()) featuredDeals = dealRepo.findActiveDeals();
         List<DealerDeal> topDeals = featuredDeals.size() > 6 ? featuredDeals.subList(0, 6) : featuredDeals;
         model.addAttribute("topDeals", topDeals);
+
+        // Top USED car deals for homepage
+        List<DealerDeal> usedDeals = dealRepo.findByCarTypeAndIsActiveTrueAndIsDeletedFalse("USED");
+        List<DealerDeal> topUsedDeals = usedDeals.size() > 6 ? usedDeals.subList(0, 6) : usedDeals;
+        model.addAttribute("topUsedDeals", topUsedDeals);
+
+        // Map vehicleId → image URL for used car deal cards
+        Map<Long, String> usedVehicleImages = new HashMap<>();
+        for (DealerDeal deal : topUsedDeals) {
+            if (deal.getVehicleId() != null) {
+                vehicleService.getById(deal.getVehicleId()).ifPresent(v -> {
+                    String img = v.getHeroImage();
+                    if (img == null || img.isBlank()) img = v.getThumbnailImage();
+                    if (img != null && !img.isBlank()) usedVehicleImages.put(v.getId(), img);
+                });
+            }
+        }
+        model.addAttribute("usedVehicleImages", usedVehicleImages);
 
         // Map vehicleId to slug and heroImage for deal cards
         Map<Long, String> vehicleSlugs = new HashMap<>();
@@ -157,39 +175,34 @@ public class WebsiteController {
         return "website/portfolio";
     }
 
+    @GetMapping("/fuel-calculator")
+    public String fuelCalculator(Model model) {
+        return "website/fuel-calculator";
+    }
+
+    @GetMapping("/loan-calculator")
+    public String loanCalculator(Model model) {
+        return "website/loan-calculator";
+    }
+
     @GetMapping("/used-cars")
-    public String usedCars(@RequestParam(defaultValue = "") String search,
-                           @RequestParam(defaultValue = "") String brand,
-                           @RequestParam(defaultValue = "") String fuel,
-                           @RequestParam(defaultValue = "") String condition,
-                           Model model) {
-        var allUsed = vehicleService.getUsedCars();
-
-        // Apply filters
-        var filtered = allUsed.stream()
-            .filter(v -> brand.isBlank() || brand.equalsIgnoreCase(v.getBrand()))
-            .filter(v -> fuel.isBlank() || fuel.equalsIgnoreCase(v.getFuelType()))
-            .filter(v -> condition.isBlank() || condition.equalsIgnoreCase(v.getCondition()))
-            .filter(v -> search.isBlank() ||
-                (v.getName() != null && v.getName().toLowerCase().contains(search.toLowerCase())) ||
-                (v.getBrand() != null && v.getBrand().toLowerCase().contains(search.toLowerCase())) ||
-                (v.getModel() != null && v.getModel().toLowerCase().contains(search.toLowerCase())))
-            .toList();
-
-        // Distinct filter values from all used cars
-        var brands = allUsed.stream().map(v -> v.getBrand()).filter(b -> b != null && !b.isBlank()).distinct().sorted().toList();
-        var fuels = allUsed.stream().map(v -> v.getFuelType()).filter(f -> f != null && !f.isBlank()).distinct().sorted().toList();
-        var conditions = allUsed.stream().map(v -> v.getCondition()).filter(c -> c != null && !c.isBlank()).distinct().toList();
-
-        model.addAttribute("vehicles", filtered);
-        model.addAttribute("brands", brands);
-        model.addAttribute("fuels", fuels);
-        model.addAttribute("conditions", conditions);
-        model.addAttribute("search", search);
-        model.addAttribute("selectedBrand", brand);
-        model.addAttribute("selectedFuel", fuel);
-        model.addAttribute("selectedCondition", condition);
-        model.addAttribute("totalCount", filtered.size());
+    public String usedCars(Model model) {
         return "website/used-cars";
+    }
+
+    @GetMapping("/used-cars/{id}")
+    public String usedCarDetail(@org.springframework.web.bind.annotation.PathVariable Long id, Model model) {
+        return dealRepo.findById(id)
+            .filter(d -> "USED".equals(d.getCarType()) && Boolean.TRUE.equals(d.getIsActive()) && !Boolean.TRUE.equals(d.getIsDeleted()))
+            .map(deal -> {
+                // If the deal is linked to a vehicle, redirect to the vehicle detail page
+                if (deal.getVehicleId() != null) {
+                    return vehicleService.getById(deal.getVehicleId())
+                        .map(v -> "redirect:/vehicles/" + v.getSlug())
+                        .orElse("redirect:/used-cars");
+                }
+                return "redirect:/used-cars";
+            })
+            .orElse("redirect:/used-cars");
     }
 }

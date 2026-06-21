@@ -34,6 +34,11 @@ public class VehicleApiController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/used")
+    public ResponseEntity<?> getUsedVehicles() {
+        return ResponseEntity.ok(vehicleService.getUsedCars());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getVehicle(@PathVariable Long id) {
         return vehicleService.getById(id).map(ResponseEntity::ok)

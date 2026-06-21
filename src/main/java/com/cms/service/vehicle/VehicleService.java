@@ -72,6 +72,11 @@ public class VehicleService {
         return vehicleRepository.findByVehicleTypeAndIsActiveTrueAndIsDeletedFalse("NEW");
     }
 
+    public List<Vehicle> searchNewCars(String search) {
+        if (search == null || search.isBlank()) return getNewCars();
+        return vehicleRepository.searchByTypeAndKeyword("NEW", search.trim());
+    }
+
     public Page<Vehicle> getUsedCarsPaged(String search, Pageable pageable) {
         if (search == null || search.isBlank())
             return vehicleRepository.findByTypePageable("USED", pageable);

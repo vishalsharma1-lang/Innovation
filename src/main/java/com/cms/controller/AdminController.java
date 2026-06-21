@@ -2,7 +2,10 @@ package com.cms.controller;
 
 import com.cms.entity.*;
 import com.cms.repository.*;
+import com.cms.repository.auto.DealerDealRepository;
+import com.cms.repository.auto.VehicleLeadRepository;
 import com.cms.service.*;
+import com.cms.service.vehicle.VehicleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,6 +23,9 @@ public class AdminController {
     @Autowired private ContentService contentService;
     @Autowired private ImageService imageService;
     @Autowired private BannerService bannerService;
+    @Autowired private VehicleService vehicleService;
+    @Autowired private DealerDealRepository dealRepo;
+    @Autowired private VehicleLeadRepository leadRepo;
 
     // ─── Login ───────────────────────────────────────────────────────────────
 
@@ -44,6 +50,23 @@ public class AdminController {
                 PageRequest.of(0, 5, Sort.by("updatedAt").descending())).getContent());
         model.addAttribute("recentBanners", bannerService.getBannersPaginated(
                 PageRequest.of(0, 5, Sort.by("updatedAt").descending())).getContent());
+
+        // Vehicle stats
+        long totalVehicles = vehicleService.getActiveVehicles().size();
+        long totalUsedCars = vehicleService.getUsedCars().size();
+        model.addAttribute("totalVehicles", totalVehicles);
+        model.addAttribute("totalUsedCars", totalUsedCars);
+
+        // Deal stats
+        long activeDeals = dealRepo.countActiveDeals();
+        long usedDeals = dealRepo.findByCarTypeAndIsActiveTrueAndIsDeletedFalse("USED").size();
+        model.addAttribute("activeDeals", activeDeals);
+        model.addAttribute("activeUsedDeals", usedDeals);
+
+        // Lead stats
+        long totalLeads = leadRepo.countByIsDeletedFalse();
+        model.addAttribute("totalLeads", totalLeads);
+
         return "admin/dashboard";
     }
 

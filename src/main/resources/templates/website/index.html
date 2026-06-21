@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
@@ -8,63 +8,139 @@
     <meta th:if="${seo != null}" name="keywords" th:content="${seo.keywords}">
     <meta th:if="${seo != null}" name="robots" th:content="${seo.robots}">
     <link th:if="${seo != null and seo.canonicalUrl != null}" rel="canonical" th:href="${seo.canonicalUrl}">
+    <meta property="og:type" content="website">
     <meta th:if="${seo != null}" property="og:title" th:content="${seo.ogTitle}">
     <meta th:if="${seo != null}" property="og:description" th:content="${seo.ogDescription}">
-    <meta property="og:type" content="website">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link th:href="@{/css/website.css}" rel="stylesheet">
+    <style>
+        /* Home-page-specific extras */
+        .hero-section { padding-top: 100px; }
+        .counter-val { display:inline-block; }
+        .trust-badge-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:20px; }
+        .trust-badge { display:flex; align-items:center; gap:6px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); border-radius:8px; padding:6px 14px; font-size:12px; font-weight:600; color:rgba(255,255,255,.8); }
+        .trust-badge i { color:#FF8C38; }
+        .section-header { margin-bottom:40px; }
+        .section-eyebrow { font-size:12px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--primary); display:flex; align-items:center; gap:6px; margin-bottom:8px; }
+        .process-connector { display:flex; align-items:center; justify-content:center; gap:0; margin-bottom:40px; }
+        .process-connector-line { flex:1; height:2px; background:linear-gradient(90deg,var(--primary),#FF8C38); opacity:.3; }
+    </style>
 </head>
 <body>
 
 <div th:replace="~{website/fragments/layout :: nav('home')}"></div>
 
-<!-- Hero -->
-<section class="hero-section" id="hero">
+<!-- ═══ HERO ═══════════════════════════════════════════════ -->
+<section class="hero-section" id="hero" style="min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden">
     <div class="hero-bg"
          th:if="${primaryBanner != null and primaryBanner.bannerImage != null}"
-         th:style="'background-image: url(' + ${primaryBanner.bannerImage} + ')'"></div>
+         th:style="'background-image:url(' + ${primaryBanner.bannerImage} + ')'"></div>
     <div class="hero-bg" th:unless="${primaryBanner != null and primaryBanner.bannerImage != null}"></div>
     <div class="hero-overlay"></div>
-    <div class="container hero-content">
-        <div class="row align-items-center min-vh-100 py-5">
-            <div class="col-lg-8">
+
+    <div class="container" style="position:relative;z-index:2;padding-top:60px;padding-bottom:60px">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
                 <div class="hero-badge animate-fade-up">
-                    <i class="fas fa-tags me-2"></i>Exclusive Dealer Offers
+                    <i class="fas fa-fire me-2"></i>Exclusive Dealer Offers · Updated Monthly
                 </div>
                 <h1 class="hero-title animate-fade-up delay-1"
                     th:text="${primaryBanner != null and primaryBanner.bannerTitle != null ? primaryBanner.bannerTitle : 'Find the Best Car Deals Near You'}">
                     Find the Best Car Deals Near You
                 </h1>
-                <p class="hero-subtitle animate-fade-up delay-2"
-                   th:text="${primaryBanner != null and primaryBanner.bannerSubtitle != null ? primaryBanner.bannerSubtitle : 'Compare prices, explore offers & save big on your next car'}">
-                    Compare prices, explore offers &amp; save big
+                <p class="hero-desc animate-fade-up delay-2">
+                    Compare prices, explore dealer offers &amp; save big on your next car.
+                    New cars &amp; certified used cars — all in one place.
                 </p>
 
-                <form id="heroSearchForm" class="hero-search-wrap animate-fade-up delay-3">
-                    <div class="input-group">
-                        <input type="text" id="heroSearchInput" class="form-control"
-                               placeholder="Search by car name, e.g. Nexon, Creta, Swift..."
-                               aria-label="Search cars">
-                        <button type="submit" class="btn btn-search">
-                            <i class="fas fa-search me-1"></i>Search Cars
+                <!-- Tab search -->
+                <div class="animate-fade-up delay-2">
+                    <div class="hero-search-tabs">
+                        <button class="hs-tab active" id="tabNew" onclick="switchHeroTab('new')">
+                            <i class="fas fa-car"></i> New Cars
+                        </button>
+                        <button class="hs-tab" id="tabUsed" onclick="switchHeroTab('used')">
+                            <i class="fas fa-recycle"></i> Used Cars
                         </button>
                     </div>
-                </form>
-
-                <div class="hero-trust-row animate-fade-up delay-4">
-                    <div class="hero-trust-item"><i class="fas fa-check-circle"></i> Authorized Dealers</div>
-                    <div class="hero-trust-item"><i class="fas fa-check-circle"></i> Verified Offers</div>
-                    <div class="hero-trust-item"><i class="fas fa-check-circle"></i> Best Price Guarantee</div>
+                    <div class="hero-search-box">
+                        <form id="heroSearchForm" action="/vehicles" method="get">
+                            <div class="input-group">
+                                <input type="text" id="heroSearchInput" name="search" class="form-control"
+                                       placeholder="Search brand, model, e.g. Nexon, Creta, Swift..." autocomplete="off">
+                                <button type="submit" class="btn btn-search">
+                                    <i class="fas fa-search me-1"></i>Search
+                                </button>
+                            </div>
+                        </form>
+                        <div class="hero-quick-links">
+                            <span style="font-size:11px;color:#64748b;font-weight:600">Popular:</span>
+                            <a href="/vehicles?search=swift" class="hero-quick-link" style="background:#f8fafc;color:#475569;border-color:#e2e8f0">Maruti Swift</a>
+                            <a href="/vehicles?search=nexon" class="hero-quick-link" style="background:#f8fafc;color:#475569;border-color:#e2e8f0">Tata Nexon</a>
+                            <a href="/vehicles?search=creta" class="hero-quick-link" style="background:#f8fafc;color:#475569;border-color:#e2e8f0">Hyundai Creta</a>
+                            <a href="/vehicles?search=brezza" class="hero-quick-link" style="background:#f8fafc;color:#475569;border-color:#e2e8f0">Brezza</a>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="hero-buttons animate-fade-up delay-4 mt-4">
-                    <a href="/vehicles" class="btn btn-hero-primary">
-                        <i class="fas fa-car me-2"></i>Browse All Cars
-                    </a>
-                    <a href="#deals" class="btn btn-hero-outline">
-                        <i class="fas fa-fire me-2"></i>Hot Deals
-                    </a>
+                <!-- Trust badges -->
+                <div class="trust-badge-row animate-fade-up delay-3">
+                    <div class="trust-badge"><i class="fas fa-shield-alt"></i> Verified Dealers</div>
+                    <div class="trust-badge"><i class="fas fa-tags"></i> Best Price Guarantee</div>
+                    <div class="trust-badge"><i class="fas fa-headset"></i> Free Price Quote</div>
+                    <div class="trust-badge"><i class="fas fa-check-circle"></i> No Spam</div>
+                </div>
+            </div>
+
+            <!-- Right side stats panel (desktop) -->
+            <div class="col-lg-5 d-none d-lg-block animate-fade-up delay-3">
+                <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:32px 28px;margin-left:24px">
+                    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.5);margin-bottom:20px">Why Buyers Choose Us</div>
+                    <div style="display:flex;flex-direction:column;gap:16px">
+                        <div style="display:flex;align-items:center;gap:14px">
+                            <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,90,0,.15);display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:18px;flex-shrink:0"><i class="fas fa-tags"></i></div>
+                            <div>
+                                <div style="font-size:14px;font-weight:700;color:#fff">Real Dealer Offers</div>
+                                <div style="font-size:12px;color:rgba(255,255,255,.5)">Cash, exchange, corporate &amp; finance deals</div>
+                            </div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:14px">
+                            <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,90,0,.15);display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:18px;flex-shrink:0"><i class="fas fa-car-side"></i></div>
+                            <div>
+                                <div style="font-size:14px;font-weight:700;color:#fff">Complete Car Info</div>
+                                <div style="font-size:12px;color:rgba(255,255,255,.5)">Specs, variants, colors, reviews &amp; FAQs</div>
+                            </div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:14px">
+                            <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,90,0,.15);display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:18px;flex-shrink:0"><i class="fas fa-recycle"></i></div>
+                            <div>
+                                <div style="font-size:14px;font-weight:700;color:#fff">Certified Used Cars</div>
+                                <div style="font-size:12px;color:rgba(255,255,255,.5)">Scored &amp; verified from Spinny, Cars24 &amp; dealers</div>
+                            </div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:14px">
+                            <div style="width:44px;height:44px;border-radius:12px;background:rgba(37,211,102,.15);display:flex;align-items:center;justify-content:center;color:#25D366;font-size:18px;flex-shrink:0"><i class="fab fa-whatsapp"></i></div>
+                            <div>
+                                <div style="font-size:14px;font-weight:700;color:#fff">Instant WhatsApp Connect</div>
+                                <div style="font-size:12px;color:rgba(255,255,255,.5)">Get quotes directly from dealers</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="border-top:1px solid rgba(255,255,255,.1);margin-top:24px;padding-top:20px;display:flex;gap:24px">
+                        <div>
+                            <div style="font-size:28px;font-weight:900;color:#fff;font-family:'Outfit',sans-serif" th:text="${totalVehicles != null ? totalVehicles + '+' : '50+'}">50+</div>
+                            <div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px">Cars Listed</div>
+                        </div>
+                        <div>
+                            <div style="font-size:28px;font-weight:900;color:#fff;font-family:'Outfit',sans-serif" th:text="${brands != null ? brands.size() + '+' : '10+'}">10+</div>
+                            <div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px">Brands</div>
+                        </div>
+                        <div>
+                            <div style="font-size:28px;font-weight:900;color:var(--primary);font-family:'Outfit',sans-serif">₹50K+</div>
+                            <div style="font-size:11px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px">Avg Savings</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -72,179 +148,291 @@
     <div class="hero-scroll-hint"><i class="fas fa-chevron-down"></i></div>
 </section>
 
-<!-- Deal urgency ticker -->
+<!-- ═══ URGENCY TICKER ══════════════════════════════════════ -->
 <div class="deal-urgency-bar" th:if="${topDeals != null and !topDeals.isEmpty()}">
     <div class="deal-urgency-track">
-        <span class="deal-urgency-item"><i class="fas fa-fire"></i> Limited Time Offers — Save up to ₹1,00,000 on top models</span>
+        <span class="deal-urgency-item"><i class="fas fa-fire"></i> Limited Time: Save up to ₹1,00,000 on top models</span>
         <span class="deal-urgency-sep">•</span>
-        <span class="deal-urgency-item"><i class="fas fa-tag"></i> Exchange Bonus Available on Select Cars</span>
+        <span class="deal-urgency-item"><i class="fas fa-exchange-alt"></i> Exchange Bonus on Select Cars</span>
         <span class="deal-urgency-sep">•</span>
-        <span class="deal-urgency-item"><i class="fas fa-building"></i> Corporate Discounts for Employees</span>
+        <span class="deal-urgency-item"><i class="fas fa-id-badge"></i> Corporate Discounts Available</span>
         <span class="deal-urgency-sep">•</span>
-        <span class="deal-urgency-item"><i class="fas fa-credit-card"></i> Special Finance Schemes from 0% Interest</span>
+        <span class="deal-urgency-item"><i class="fas fa-credit-card"></i> 0% Finance Schemes</span>
         <span class="deal-urgency-sep">•</span>
-        <!-- repeat for seamless loop -->
-        <span class="deal-urgency-item"><i class="fas fa-fire"></i> Limited Time Offers — Save up to ₹1,00,000 on top models</span>
+        <span class="deal-urgency-item"><i class="fas fa-recycle"></i> Certified Used Cars — Best Prices</span>
         <span class="deal-urgency-sep">•</span>
-        <span class="deal-urgency-item"><i class="fas fa-tag"></i> Exchange Bonus Available on Select Cars</span>
+        <span class="deal-urgency-item"><i class="fas fa-fire"></i> Limited Time: Save up to ₹1,00,000 on top models</span>
         <span class="deal-urgency-sep">•</span>
-        <span class="deal-urgency-item"><i class="fas fa-building"></i> Corporate Discounts for Employees</span>
+        <span class="deal-urgency-item"><i class="fas fa-exchange-alt"></i> Exchange Bonus on Select Cars</span>
         <span class="deal-urgency-sep">•</span>
-        <span class="deal-urgency-item"><i class="fas fa-credit-card"></i> Special Finance Schemes from 0% Interest</span>
+        <span class="deal-urgency-item"><i class="fas fa-id-badge"></i> Corporate Discounts Available</span>
+        <span class="deal-urgency-sep">•</span>
+        <span class="deal-urgency-item"><i class="fas fa-credit-card"></i> 0% Finance Schemes</span>
     </div>
 </div>
 
-<!-- Stats -->
+<!-- ═══ STATS BAR ═══════════════════════════════════════════ -->
 <section class="stats-bar">
     <div class="container">
         <div class="row g-0">
-            <div class="col-6 col-md-3 stat-item">
+            <div class="col-6 col-md-3 stat-item animate-on-scroll">
                 <div class="stat-icon"><i class="fas fa-car"></i></div>
-                <div class="stat-num" th:text="${totalVehicles != null ? totalVehicles + '+' : '100+'}">100+</div>
+                <div class="stat-num"><span class="counter-val" data-target="th:data-target=${totalVehicles != null ? totalVehicles : 50}" th:data-target="${totalVehicles != null ? totalVehicles : 50}">0</span>+</div>
                 <div class="stat-lbl">Cars Listed</div>
             </div>
-            <div class="col-6 col-md-3 stat-item">
+            <div class="col-6 col-md-3 stat-item animate-on-scroll">
                 <div class="stat-icon"><i class="fas fa-award"></i></div>
-                <div class="stat-num" th:text="${brands != null ? brands.size() + '+' : '20+'}">20+</div>
+                <div class="stat-num"><span class="counter-val" th:data-target="${brands != null ? brands.size() : 10}">0</span>+</div>
                 <div class="stat-lbl">Top Brands</div>
             </div>
-            <div class="col-6 col-md-3 stat-item">
+            <div class="col-6 col-md-3 stat-item animate-on-scroll">
                 <div class="stat-icon"><i class="fas fa-tags"></i></div>
-                <div class="stat-num" th:text="${topDeals != null ? topDeals.size() + '+' : '50+'}">50+</div>
+                <div class="stat-num"><span class="counter-val" th:data-target="${(topDeals != null ? topDeals.size() : 0) + (topUsedDeals != null ? topUsedDeals.size() : 0)}">0</span>+</div>
                 <div class="stat-lbl">Active Deals</div>
             </div>
-            <div class="col-6 col-md-3 stat-item">
+            <div class="col-6 col-md-3 stat-item animate-on-scroll">
                 <div class="stat-icon"><i class="fas fa-rupee-sign"></i></div>
-                <div class="stat-num">₹<span>50K</span>+</div>
+                <div class="stat-num">₹<span style="color:var(--primary)">50K</span>+</div>
                 <div class="stat-lbl">Avg. Savings</div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Top Deals -->
-<section class="section-pad bg-white" id="deals" th:if="${topDeals != null and !topDeals.isEmpty()}">
+<!-- ═══ HOW IT WORKS ════════════════════════════════════════ -->
+<section style="background:#fff;padding:56px 0 48px">
     <div class="container">
-        <div class="d-flex align-items-end justify-content-between flex-wrap gap-3 mb-5">
-            <div>
-                <div class="section-badge"><i class="fas fa-fire"></i> Hot Deals</div>
-                <h2 class="section-title mb-1">Top Car <span class="highlight">Deals &amp; Offers</span></h2>
-                <p class="section-subtitle mb-0">Exclusive savings from authorized dealers near you</p>
-            </div>
-            <a href="/vehicles" class="btn-primary-gradient d-none d-md-inline-block">
-                <i class="fas fa-th me-2"></i>View All Cars
-            </a>
+        <div class="text-center mb-5">
+            <div class="section-eyebrow justify-content-center"><i class="fas fa-map-signs"></i> Simple Process</div>
+            <h2 class="section-title">Get Your Best Deal in <span class="highlight">3 Easy Steps</span></h2>
         </div>
-        <div class="row g-4">
-            <div class="col-md-6 col-lg-4" th:each="deal : ${topDeals}">
-                <a th:href="${vehicleSlugs != null and vehicleSlugs.containsKey(deal.vehicleId) ? '/vehicles/' + vehicleSlugs.get(deal.vehicleId) : '/vehicles'}"
-                   class="text-decoration-none d-block h-100 track-deal-click"
-                   th:data-deal-id="${deal.id}"
-                   th:data-deal-name="${deal.vehicleName}"
-                   th:data-vehicle-id="${deal.vehicleId}"
-                   th:data-vehicle-name="${deal.vehicleName}">
-                    <div class="deal-card">
-
-                        <!-- ── Image hero ── -->
-                        <div class="deal-card-image">
-                            <img th:if="${vehicleImages != null and vehicleImages.containsKey(deal.vehicleId)}"
-                                 th:src="${vehicleImages.get(deal.vehicleId)}"
-                                 th:alt="${deal.vehicleName}"
-                                 loading="lazy"
-                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-                            <div class="deal-card-image-placeholder"
-                                 th:style="${vehicleImages != null and vehicleImages.containsKey(deal.vehicleId)} ? 'display:none' : ''">
-                                <i class="fas fa-car-side"></i>
-                            </div>
-                            <!-- "Limited Offer" ribbon -->
-                            <div class="deal-ribbon">
-                                <i class="fas fa-fire"></i> Limited Offer
-                            </div>
-                            <!-- car name + savings overlaid on image -->
-                            <div class="deal-img-overlay">
-                                <div class="deal-img-car-name" th:text="${deal.vehicleName}">Car Name</div>
-                                <div class="deal-img-savings">
-                                    <i class="fas fa-bolt"></i>
-                                    Save ₹<span th:text="${#numbers.formatDecimal(deal.totalSavings, 1, 0)}"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- ── Body ── -->
-                        <div class="deal-card-body">
-
-                            <!-- Expiry -->
-                            <div class="deal-expiry" th:if="${deal.endDate != null}">
-                                <i class="fas fa-clock"></i>
-                                Offer ends <strong th:text="${deal.endDate}"></strong>
-                            </div>
-
-                            <!-- Discount breakdown chips -->
-                            <div class="deal-breakdown">
-                                <div th:if="${deal.cashDiscount != null and deal.cashDiscount > 0}" class="deal-breakdown-chip">
-                                    <div class="deal-breakdown-icon"><i class="fas fa-money-bill-wave"></i></div>
-                                    <div class="deal-breakdown-info">
-                                        <div class="deal-breakdown-label">Cash</div>
-                                        <div class="deal-breakdown-value">₹<span th:text="${#numbers.formatDecimal(deal.cashDiscount, 1, 0)}"></span></div>
-                                    </div>
-                                </div>
-                                <div th:if="${deal.exchangeBonus != null and deal.exchangeBonus > 0}" class="deal-breakdown-chip">
-                                    <div class="deal-breakdown-icon"><i class="fas fa-exchange-alt"></i></div>
-                                    <div class="deal-breakdown-info">
-                                        <div class="deal-breakdown-label">Exchange</div>
-                                        <div class="deal-breakdown-value">₹<span th:text="${#numbers.formatDecimal(deal.exchangeBonus, 1, 0)}"></span></div>
-                                    </div>
-                                </div>
-                                <div th:if="${deal.corporateDiscount != null and deal.corporateDiscount > 0}" class="deal-breakdown-chip">
-                                    <div class="deal-breakdown-icon"><i class="fas fa-building"></i></div>
-                                    <div class="deal-breakdown-info">
-                                        <div class="deal-breakdown-label">Corporate</div>
-                                        <div class="deal-breakdown-value">₹<span th:text="${#numbers.formatDecimal(deal.corporateDiscount, 1, 0)}"></span></div>
-                                    </div>
-                                </div>
-                                <div th:if="${deal.financeBenefit != null and deal.financeBenefit > 0}" class="deal-breakdown-chip">
-                                    <div class="deal-breakdown-icon"><i class="fas fa-credit-card"></i></div>
-                                    <div class="deal-breakdown-info">
-                                        <div class="deal-breakdown-label">Finance</div>
-                                        <div class="deal-breakdown-value">₹<span th:text="${#numbers.formatDecimal(deal.financeBenefit, 1, 0)}"></span></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Dealer -->
-                            <div class="deal-dealer">
-                                <i class="fas fa-store"></i>
-                                <span th:text="${deal.dealerName != null ? deal.dealerName : 'Authorized Dealer'}"></span>
-                                <span class="deal-dealer-dot" th:if="${deal.city != null}"></span>
-                                <span th:if="${deal.city != null}" th:text="${deal.city}"></span>
-                            </div>
-
-                            <!-- CTA -->
-                            <div class="deal-cta-btn">
-                                Get This Deal <i class="fas fa-arrow-right"></i>
-                            </div>
-
-                        </div>
-                    </div>
-                </a>
+        <div class="row g-4 text-center">
+            <div class="col-md-4 animate-on-scroll">
+                <div class="process-step">
+                    <div class="ps-num">1</div>
+                    <div class="ps-title">Browse &amp; Compare</div>
+                    <div class="ps-desc">Search from 50+ cars across all brands. Filter by budget, fuel type, and body style.</div>
+                </div>
             </div>
-        </div>
-        <div class="text-center mt-4 d-md-none">
-            <a href="/vehicles" class="btn-primary-gradient"><i class="fas fa-th me-2"></i>View All Cars</a>
+            <div class="col-md-4 animate-on-scroll" style="transition-delay:.1s">
+                <div class="process-step">
+                    <div class="ps-num">2</div>
+                    <div class="ps-title">Check Best Offers</div>
+                    <div class="ps-desc">View real cash discounts, exchange bonuses, and corporate deals from authorized dealers.</div>
+                </div>
+            </div>
+            <div class="col-md-4 animate-on-scroll" style="transition-delay:.2s">
+                <div class="process-step">
+                    <div class="ps-num">3</div>
+                    <div class="ps-title">Connect &amp; Save</div>
+                    <div class="ps-desc">Get your free price quote via WhatsApp and drive home your dream car at the best price.</div>
+                </div>
+            </div>
         </div>
     </div>
 </section>
 
-<!-- Brands -->
-<section class="section-pad bg-white" id="brands">
+<!-- ═══ TOP CAR DEALS & OFFERS (TABBED) ══════════════════════ -->
+<section class="deals-section" id="deals">
+    <div class="container">
+        <div class="deals-header">
+            <div class="deals-header-left">
+                <div class="deals-eyebrow"><i class="fas fa-fire"></i> Hot Deals &amp; Offers</div>
+                <h2 class="deals-title">Top Car <span>Deals &amp; Offers</span></h2>
+                <p class="deals-subtitle">Exclusive savings verified from authorized dealers · Updated this month</p>
+            </div>
+            <div class="d-none d-md-flex align-items-center gap-3">
+                <a href="/vehicles" id="dealsViewAllNew" class="deals-view-all">View All New Cars <i class="fas fa-arrow-right ms-2"></i></a>
+                <a href="/used-cars" id="dealsViewAllUsed" class="deals-view-all" style="display:none!important">View All Used Cars <i class="fas fa-arrow-right ms-2"></i></a>
+            </div>
+        </div>
+
+        <!-- Tab Switcher -->
+        <div class="deals-tab-bar">
+            <button class="deals-tab active" id="tabNewDeals" onclick="switchDealsTab('new')">
+                <i class="fas fa-car me-2"></i>New Cars
+            </button>
+            <button class="deals-tab" id="tabUsedDeals" onclick="switchDealsTab('used')">
+                <i class="fas fa-recycle me-2"></i>Used Cars
+            </button>
+        </div>
+
+        <!-- New Cars Tab -->
+        <div id="newDealsPanel">
+            <div class="row g-4" th:if="${topDeals != null and !topDeals.isEmpty()}">
+                <div class="col-md-6 col-lg-4 animate-on-scroll" th:each="deal : ${topDeals}">
+                    <a th:href="${vehicleSlugs != null and vehicleSlugs.containsKey(deal.vehicleId) ? '/vehicles/' + vehicleSlugs.get(deal.vehicleId) : '/vehicles'}"
+                       class="text-decoration-none d-block h-100">
+                        <div class="dc-card">
+                            <div class="dc-img-zone">
+                                <img th:if="${vehicleImages != null and vehicleImages.containsKey(deal.vehicleId)}"
+                                     th:src="${vehicleImages.get(deal.vehicleId)}"
+                                     th:alt="${deal.vehicleName}" loading="lazy"
+                                     onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                                <div class="dc-img-ph" th:style="${vehicleImages != null and vehicleImages.containsKey(deal.vehicleId)} ? 'display:none' : ''">
+                                    <i class="fas fa-car-side"></i>
+                                </div>
+                                <div class="dc-overlay">
+                                    <div class="dc-car-label" th:text="${deal.vehicleName}">Car</div>
+                                    <div class="dc-savings-badge" th:if="${deal.totalSavings != null and deal.totalSavings > 0}">
+                                        <i class="fas fa-bolt"></i>
+                                        Save ₹<span th:text="${#numbers.formatDecimal(deal.totalSavings, 1, 0)}"></span>
+                                    </div>
+                                </div>
+                                <div class="dc-limited-tag"><i class="fas fa-fire"></i> Limited Offer</div>
+                                <div class="dc-expiry-tag" th:if="${deal.endDate != null}">
+                                    <i class="fas fa-clock"></i> Till <span th:text="${deal.endDate}"></span>
+                                </div>
+                            </div>
+                            <div class="dc-body">
+                                <div class="dc-type-pills">
+                                    <span th:if="${deal.cashDiscount != null and deal.cashDiscount > 0}" class="dc-pill dc-pill-cash"><i class="fas fa-money-bill-wave"></i> Cash</span>
+                                    <span th:if="${deal.exchangeBonus != null and deal.exchangeBonus > 0}" class="dc-pill dc-pill-exch"><i class="fas fa-exchange-alt"></i> Exchange</span>
+                                    <span th:if="${deal.corporateDiscount != null and deal.corporateDiscount > 0}" class="dc-pill dc-pill-corp"><i class="fas fa-id-badge"></i> Corporate</span>
+                                    <span th:if="${deal.financeBenefit != null and deal.financeBenefit > 0}" class="dc-pill dc-pill-fin"><i class="fas fa-credit-card"></i> Finance</span>
+                                </div>
+                                <div class="dc-breakdown">
+                                    <div th:if="${deal.cashDiscount != null and deal.cashDiscount > 0}" class="dc-row dc-row-cash">
+                                        <span class="dc-row-icon"><i class="fas fa-money-bill-wave"></i></span>
+                                        <span class="dc-row-label">Cash Discount</span>
+                                        <span class="dc-row-value">₹<span th:text="${#numbers.formatDecimal(deal.cashDiscount,1,0)}"></span></span>
+                                    </div>
+                                    <div th:if="${deal.exchangeBonus != null and deal.exchangeBonus > 0}" class="dc-row dc-row-exch">
+                                        <span class="dc-row-icon"><i class="fas fa-exchange-alt"></i></span>
+                                        <span class="dc-row-label">Exchange Bonus</span>
+                                        <span class="dc-row-value">₹<span th:text="${#numbers.formatDecimal(deal.exchangeBonus,1,0)}"></span></span>
+                                    </div>
+                                    <div th:if="${deal.corporateDiscount != null and deal.corporateDiscount > 0}" class="dc-row dc-row-corp">
+                                        <span class="dc-row-icon"><i class="fas fa-id-badge"></i></span>
+                                        <span class="dc-row-label">Corporate Discount</span>
+                                        <span class="dc-row-value">₹<span th:text="${#numbers.formatDecimal(deal.corporateDiscount,1,0)}"></span></span>
+                                    </div>
+                                    <div th:if="${deal.financeBenefit != null and deal.financeBenefit > 0}" class="dc-row dc-row-fin">
+                                        <span class="dc-row-icon"><i class="fas fa-credit-card"></i></span>
+                                        <span class="dc-row-label">Finance Benefit</span>
+                                        <span class="dc-row-value">₹<span th:text="${#numbers.formatDecimal(deal.financeBenefit,1,0)}"></span></span>
+                                    </div>
+                                    <div class="dc-total-row">
+                                        <span class="dc-total-label">Total Benefit</span>
+                                        <span class="dc-total-value">₹<span th:text="${#numbers.formatDecimal(deal.totalSavings,1,0)}"></span></span>
+                                    </div>
+                                </div>
+                                <div class="dc-dealer">
+                                    <span class="dc-dealer-icon"><i class="fas fa-store"></i></span>
+                                    <span class="dc-dealer-name" th:text="${deal.dealerName != null ? deal.dealerName : 'Authorized Dealer'}"></span>
+                                    <span class="dc-dealer-city" th:if="${deal.city != null}" th:text="${deal.city}"></span>
+                                </div>
+                                <div class="dc-cta">
+                                    <span>Get This Deal</span>
+                                    <span class="dc-cta-arrow"><i class="fas fa-arrow-right"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            <div th:if="${topDeals == null or topDeals.isEmpty()}" class="text-center py-5 text-muted">
+                <i class="fas fa-car fa-3x mb-3 opacity-25"></i>
+                <p>No new car deals available right now.</p>
+            </div>
+            <div class="text-center mt-4">
+                <a href="/vehicles" class="btn-primary-gradient"><i class="fas fa-th me-2"></i>View All New Cars</a>
+            </div>
+        </div>
+
+        <!-- Used Cars Tab -->
+        <div id="usedDealsPanel" style="display:none">
+            <div class="row g-4" th:if="${topUsedDeals != null and !topUsedDeals.isEmpty()}">
+                <div class="col-md-6 col-lg-4 animate-on-scroll" th:each="deal : ${topUsedDeals}">
+                    <a th:href="@{/used-cars/{id}(id=${deal.id})}" class="text-decoration-none d-block h-100">
+                        <div class="dc-card">
+                            <div class="dc-img-zone">
+                                <img th:if="${usedVehicleImages != null and deal.vehicleId != null and usedVehicleImages.containsKey(deal.vehicleId)}"
+                                     th:src="${usedVehicleImages.get(deal.vehicleId)}" th:alt="${deal.vehicleName}" loading="lazy"
+                                     onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+                                     style="width:100%;height:100%;object-fit:cover">
+                                <div class="dc-img-ph" th:style="${usedVehicleImages != null and deal.vehicleId != null and usedVehicleImages.containsKey(deal.vehicleId)} ? 'display:none' : 'display:flex'">
+                                    <i class="fas fa-car-side"></i>
+                                </div>
+                                <div class="dc-overlay">
+                                    <div class="dc-car-label" th:text="${deal.vehicleName}">Car</div>
+                                    <div class="dc-savings-badge" th:if="${deal.ucAskingPrice != null}">
+                                        <i class="fas fa-tag"></i>
+                                        ₹<span th:text="${#numbers.formatDecimal(deal.ucAskingPrice/100000,1,2)}"></span>L
+                                    </div>
+                                </div>
+                                <div class="dc-limited-tag">
+                                    <i class="fas fa-check-circle" th:if="${deal.ucDealTag == 'BEST_DEAL' or deal.ucDealTag == 'GOOD_DEAL'}"></i>
+                                    <i class="fas fa-recycle" th:unless="${deal.ucDealTag == 'BEST_DEAL' or deal.ucDealTag == 'GOOD_DEAL'}"></i>
+                                    <span th:switch="${deal.ucDealTag}">
+                                        <span th:case="'BEST_DEAL'">Best Deal</span>
+                                        <span th:case="'GOOD_DEAL'">Good Deal</span>
+                                        <span th:case="*">Used Car</span>
+                                    </span>
+                                </div>
+                                <div class="dc-expiry-tag" th:if="${deal.ucSourceWebsite != null}">
+                                    <span th:text="${#strings.toUpperCase(deal.ucSourceWebsite)}"></span>
+                                </div>
+                            </div>
+                            <div class="dc-body">
+                                <div class="dc-type-pills">
+                                    <span th:if="${deal.ucYear != null}" class="dc-pill dc-pill-cash"><i class="fas fa-calendar"></i><span th:text="${deal.ucYear}"></span></span>
+                                    <span th:if="${deal.ucKmDriven != null}" class="dc-pill dc-pill-exch"><i class="fas fa-road"></i><span th:text="${#numbers.formatDecimal(deal.ucKmDriven,1,0)} + ' km'"></span></span>
+                                    <span th:if="${deal.ucFuelType != null}" class="dc-pill dc-pill-fin"><i class="fas fa-gas-pump"></i><span th:text="${deal.ucFuelType}"></span></span>
+                                    <span th:if="${deal.ucOwnerType != null}" class="dc-pill dc-pill-corp"><i class="fas fa-user"></i><span th:text="${deal.ucOwnerType} + ' Owner'"></span></span>
+                                </div>
+                                <div class="dc-breakdown">
+                                    <div class="dc-row dc-row-cash" th:if="${deal.ucAskingPrice != null}">
+                                        <span class="dc-row-icon"><i class="fas fa-tag"></i></span>
+                                        <span class="dc-row-label">Asking Price</span>
+                                        <span class="dc-row-value">₹<span th:text="${#numbers.formatDecimal(deal.ucAskingPrice,1,0)}"></span></span>
+                                    </div>
+                                    <div class="dc-row dc-row-fin" th:if="${deal.ucDealScore != null}">
+                                        <span class="dc-row-icon"><i class="fas fa-star"></i></span>
+                                        <span class="dc-row-label">Deal Score</span>
+                                        <span class="dc-row-value" th:text="${deal.ucDealScore} + '/100'"></span>
+                                    </div>
+                                    <div class="dc-row" th:if="${deal.ucTransmission != null}">
+                                        <span class="dc-row-icon"><i class="fas fa-cog"></i></span>
+                                        <span class="dc-row-label">Transmission</span>
+                                        <span class="dc-row-value" th:text="${deal.ucTransmission}"></span>
+                                    </div>
+                                </div>
+                                <div class="dc-dealer">
+                                    <span class="dc-dealer-icon"><i class="fas fa-store"></i></span>
+                                    <span class="dc-dealer-name" th:text="${deal.dealerName != null ? deal.dealerName : 'Available'}"></span>
+                                    <span class="dc-dealer-city" th:if="${deal.city != null}" th:text="${deal.city}"></span>
+                                </div>
+                                <div class="dc-cta">
+                                    <span>View Deal</span>
+                                    <span class="dc-cta-arrow"><i class="fas fa-arrow-right"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            <div th:if="${topUsedDeals == null or topUsedDeals.isEmpty()}" class="text-center py-5 text-muted">
+                <i class="fas fa-recycle fa-3x mb-3 opacity-25"></i>
+                <p>No used car deals available right now.</p>
+            </div>
+            <div class="text-center mt-4">
+                <a href="/used-cars" class="btn-primary-gradient"><i class="fas fa-recycle me-2"></i>View All Used Cars</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ BRANDS ════════════════════════════════════════════════ -->
+<section class="section-pad" style="background:var(--bg-section)" id="brands">
     <div class="container">
         <div class="text-center mb-5">
             <div class="section-badge">Popular Brands</div>
-            <h2 class="section-title">Browse Cars By Brand</h2>
-            <p class="section-subtitle">Explore vehicles from India's top automotive manufacturers</p>
+            <h2 class="section-title">Browse Cars By <span class="highlight">Brand</span></h2>
+            <p class="section-subtitle">India's top automotive brands — all in one place</p>
         </div>
         <div class="row g-3 justify-content-center">
-            <div class="col-4 col-md-3 col-lg-2" th:each="brand : ${brands}">
+            <div class="col-4 col-md-3 col-lg-2 animate-on-scroll" th:each="brand : ${brands}">
                 <a th:href="@{/brand/{slug}(slug=${#strings.toLowerCase(#strings.replace(brand,' ','-'))})}"
                    class="text-decoration-none d-block h-100 track-brand-click"
                    th:data-brand-name="${brand}">
@@ -252,11 +440,9 @@
                         <div class="brand-logo-wrap">
                             <img th:if="${brandLogos != null and brandLogos.containsKey(brand)}"
                                  th:src="${brandLogos.get(brand)}"
-                                 th:alt="${brand + ' logo'}"
-                                 loading="lazy"
+                                 th:alt="${brand + ' logo'}" loading="lazy"
                                  onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-                            <span class="brand-logo-fallback"
-                                  th:style="${brandLogos != null and brandLogos.containsKey(brand)} ? 'display:none' : ''">
+                            <span class="brand-logo-fallback" th:style="${brandLogos != null and brandLogos.containsKey(brand)} ? 'display:none' : ''">
                                 <i class="fas fa-car"></i>
                             </span>
                         </div>
@@ -271,8 +457,54 @@
     </div>
 </section>
 
-<!-- Why Choose Us -->
-<section class="section-pad" style="background:var(--bg-section)">
+<!-- ═══ LEAD CAPTURE ══════════════════════════════════════════ -->
+<section class="lead-section">
+    <div class="container" style="position:relative;z-index:1">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-5">
+                <div class="section-eyebrow" style="color:#FF8C38"><i class="fas fa-headset"></i> Free Price Quote</div>
+                <h2 style="font-size:clamp(24px,3.5vw,36px);font-weight:800;color:#fff;margin-bottom:12px;font-family:'Outfit',sans-serif">
+                    Get the Best Price <br>for Your Dream Car
+                </h2>
+                <p style="color:rgba(255,255,255,.6);font-size:15px;line-height:1.7;margin-bottom:0">
+                    Tell us which car you're looking for. Our team will share the best dealer offers,
+                    on-road price, and exclusive discounts — completely free.
+                </p>
+                <div style="display:flex;gap:16px;margin-top:20px;flex-wrap:wrap">
+                    <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,.6)"><i class="fas fa-check" style="color:#25D366"></i> No spam calls</div>
+                    <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,.6)"><i class="fas fa-check" style="color:#25D366"></i> Response in 30 min</div>
+                    <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,.6)"><i class="fas fa-check" style="color:#25D366"></i> 100% free service</div>
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <div class="lead-card">
+                    <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:16px">
+                        <i class="fas fa-car me-2" style="color:var(--primary)"></i>Request Free Price Quote
+                    </div>
+                    <form id="leadForm" onsubmit="submitLead(event)">
+                        <div class="lead-input-row mb-2">
+                            <input type="text" class="lead-input" id="leadName" placeholder="Your Name *" required>
+                            <input type="tel" class="lead-input" id="leadPhone" placeholder="Mobile Number *" required pattern="[0-9]{10}">
+                        </div>
+                        <div class="lead-input-row mb-2">
+                            <input type="text" class="lead-input" id="leadCar" placeholder="Car you're looking for (e.g. Tata Nexon)" required>
+                            <input type="text" class="lead-input" id="leadCity" placeholder="Your City">
+                        </div>
+                        <button type="submit" class="lead-btn w-100 mt-1">
+                            <i class="fas fa-paper-plane me-2"></i>Get Free Price Quote
+                        </button>
+                    </form>
+                    <div id="leadSuccess" style="display:none;margin-top:14px;background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.3);border-radius:10px;padding:14px;color:#4ade80;font-weight:600;text-align:center">
+                        <i class="fas fa-check-circle me-2"></i>Done! We'll contact you within 30 minutes.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ WHY CHOOSE US ═════════════════════════════════════════ -->
+<section class="section-pad bg-white">
     <div class="container">
         <div class="text-center mb-5">
             <div class="section-badge"><i class="fas fa-star"></i> Why CarDekho Deals</div>
@@ -280,7 +512,7 @@
             <p class="section-subtitle">Everything you need to make the right car buying decision</p>
         </div>
         <div class="row g-4">
-            <div class="col-md-4">
+            <div class="col-md-4 animate-on-scroll">
                 <div class="why-card">
                     <div class="why-num">01</div>
                     <div class="why-icon"><i class="fas fa-tags"></i></div>
@@ -288,16 +520,16 @@
                     <p>Compare cash discounts, exchange bonuses, and corporate benefits from multiple dealers in one place.</p>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="why-card" style="transition-delay:.1s">
+            <div class="col-md-4 animate-on-scroll" style="transition-delay:.1s">
+                <div class="why-card">
                     <div class="why-num">02</div>
                     <div class="why-icon"><i class="fas fa-car-side"></i></div>
                     <h5>Complete Car Info</h5>
                     <p>Detailed specs, variants, colors, gallery, expert reviews, and FAQs for every model.</p>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="why-card" style="transition-delay:.2s">
+            <div class="col-md-4 animate-on-scroll" style="transition-delay:.2s">
+                <div class="why-card">
                     <div class="why-num">03</div>
                     <div class="why-icon"><i class="fas fa-headset"></i></div>
                     <h5>Free Price Quotes</h5>
@@ -308,22 +540,64 @@
     </div>
 </section>
 
-<!-- CTA -->
+<!-- ═══ TESTIMONIALS ══════════════════════════════════════════ -->
+<section class="section-pad" style="background:var(--bg-section)">
+    <div class="container">
+        <div class="text-center mb-5">
+            <div class="section-badge"><i class="fas fa-quote-left"></i> Happy Buyers</div>
+            <h2 class="section-title">What Our <span class="highlight">Customers Say</span></h2>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4 animate-on-scroll">
+                <div class="testimonial-card">
+                    <div class="tc-stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                    <p class="tc-text">"Found the best deal on my Tata Nexon here. Saved ₹45,000 compared to the showroom price I was quoted. Highly recommend!"</p>
+                    <div class="tc-author">
+                        <div class="tc-avatar">R</div>
+                        <div><div class="tc-name">Rahul Sharma</div><div class="tc-car">Tata Nexon XZ+</div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 animate-on-scroll" style="transition-delay:.1s">
+                <div class="testimonial-card">
+                    <div class="tc-stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                    <p class="tc-text">"The used car section is fantastic. Got a well-priced 2021 Swift with 1st owner and low KM. The deal score helped me decide quickly."</p>
+                    <div class="tc-author">
+                        <div class="tc-avatar">P</div>
+                        <div><div class="tc-name">Priya Mehta</div><div class="tc-car">Maruti Swift VXI</div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 animate-on-scroll" style="transition-delay:.2s">
+                <div class="testimonial-card">
+                    <div class="tc-stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i></div>
+                    <p class="tc-text">"As a corporate employee, I got an additional ₹25,000 corporate discount on my Hyundai Creta that I wouldn't have known about otherwise!"</p>
+                    <div class="tc-author">
+                        <div class="tc-avatar">A</div>
+                        <div><div class="tc-name">Amit Verma</div><div class="tc-car">Hyundai Creta SX</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ FINAL CTA ══════════════════════════════════════════════ -->
 <section class="cta-section" style="position:relative;overflow:hidden">
-    <div style="position:absolute;inset:0;background:radial-gradient(circle at 20% 50%, rgba(255,90,0,0.15) 0%,transparent 60%),radial-gradient(circle at 80% 50%, rgba(255,140,56,0.1) 0%,transparent 60%)"></div>
+    <div style="position:absolute;inset:0;background:radial-gradient(circle at 20% 50%,rgba(255,90,0,.15) 0%,transparent 60%),radial-gradient(circle at 80% 50%,rgba(255,140,56,.1) 0%,transparent 60%)"></div>
     <div class="container text-center" style="position:relative;z-index:1">
-        <div class="section-badge" style="background:rgba(255,90,0,0.15);border-color:rgba(255,90,0,0.3);color:#FF8C38;margin-bottom:20px">
+        <div class="section-badge" style="background:rgba(255,90,0,.15);border-color:rgba(255,90,0,.3);color:#FF8C38;margin-bottom:20px">
             <i class="fas fa-rocket"></i> Get Started Today
         </div>
         <h2 class="text-white fw-800 mb-3" style="font-size:clamp(24px,4vw,38px);letter-spacing:-0.5px;font-family:'Outfit',sans-serif">
             Ready to Find Your <span style="color:var(--primary)">Perfect Car?</span>
         </h2>
-        <p class="mb-4" style="color:rgba(255,255,255,0.65);font-size:17px;max-width:520px;margin:0 auto 28px">
+        <p class="mb-4" style="color:rgba(255,255,255,.65);font-size:17px;max-width:520px;margin:0 auto 28px">
             Browse latest models, compare prices, and unlock exclusive dealer offers today.
         </p>
         <div class="d-flex gap-3 justify-content-center flex-wrap">
-            <a href="/vehicles" class="btn btn-hero-primary"><i class="fas fa-car me-2"></i>Explore Cars Now</a>
-            <a href="#deals" class="btn btn-hero-outline"><i class="fas fa-fire me-2"></i>View Hot Deals</a>
+            <a href="/vehicles" class="btn btn-hero-primary"><i class="fas fa-car me-2"></i>Explore New Cars</a>
+            <a href="/used-cars" class="btn btn-hero-outline"><i class="fas fa-recycle me-2"></i>Browse Used Cars</a>
         </div>
     </div>
 </section>
@@ -332,5 +606,87 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script th:src="@{/js/website.js}"></script>
+<script>
+// Deals tab switch
+function switchDealsTab(tab) {
+    var newPanel = document.getElementById('newDealsPanel');
+    var usedPanel = document.getElementById('usedDealsPanel');
+    var tabNew = document.getElementById('tabNewDeals');
+    var tabUsed = document.getElementById('tabUsedDeals');
+    var viewAllNew = document.getElementById('dealsViewAllNew');
+    var viewAllUsed = document.getElementById('dealsViewAllUsed');
+    if (tab === 'new') {
+        newPanel.style.display = '';
+        usedPanel.style.display = 'none';
+        tabNew.classList.add('active');
+        tabUsed.classList.remove('active');
+        if (viewAllNew) viewAllNew.style.display = '';
+        if (viewAllUsed) viewAllUsed.style.removeProperty('display');
+    } else {
+        newPanel.style.display = 'none';
+        usedPanel.style.display = '';
+        tabNew.classList.remove('active');
+        tabUsed.classList.add('active');
+        if (viewAllNew) viewAllNew.style.display = 'none';
+        if (viewAllUsed) viewAllUsed.style.display = '';
+    }
+}
+
+// Hero tab switch
+function switchHeroTab(tab) {
+    var form = document.getElementById('heroSearchForm');
+    var input = document.getElementById('heroSearchInput');
+    if (tab === 'new') {
+        form.action = '/vehicles';
+        input.placeholder = 'Search brand, model, e.g. Nexon, Creta, Swift...';
+        document.getElementById('tabNew').classList.add('active');
+        document.getElementById('tabUsed').classList.remove('active');
+    } else {
+        form.action = '/used-cars';
+        input.placeholder = 'Search used cars, e.g. Swift, Nexon, Creta...';
+        document.getElementById('tabNew').classList.remove('active');
+        document.getElementById('tabUsed').classList.add('active');
+    }
+}
+
+// Counter animation
+function animateCounters() {
+    document.querySelectorAll('.counter-val[data-target]').forEach(function(el) {
+        var target = parseInt(el.getAttribute('data-target')) || 0;
+        var duration = 1200;
+        var start = performance.now();
+        function update(now) {
+            var progress = Math.min((now - start) / duration, 1);
+            el.textContent = Math.round(progress * target);
+            if (progress < 1) requestAnimationFrame(update);
+        }
+        requestAnimationFrame(update);
+    });
+}
+
+// Lead form submit
+function submitLead(e) {
+    e.preventDefault();
+    var name = document.getElementById('leadName').value;
+    var phone = document.getElementById('leadPhone').value;
+    var car = document.getElementById('leadCar').value;
+    var city = document.getElementById('leadCity').value;
+    var msg = encodeURIComponent('Hi, I need a price quote.\nName: ' + name + '\nMobile: ' + phone + '\nCar: ' + car + (city ? '\nCity: ' + city : ''));
+    window.open('https://wa.me/?text=' + msg, '_blank');
+    document.getElementById('leadSuccess').style.display = 'block';
+    document.getElementById('leadForm').style.display = 'none';
+}
+
+// Scroll animations
+var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+        if (e.isIntersecting) {
+            e.target.classList.add('is-visible');
+            if (e.target.querySelector('.counter-val')) animateCounters();
+        }
+    });
+}, { threshold: 0.15 });
+document.querySelectorAll('.animate-on-scroll').forEach(function(el) { observer.observe(el); });
+</script>
 </body>
 </html>

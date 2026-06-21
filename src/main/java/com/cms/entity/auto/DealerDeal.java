@@ -19,10 +19,14 @@ public class DealerDeal {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "dealer_id", nullable = false)
+    // NEW or USED (default NEW)
+    @Column(name = "car_type", length = 10)
+    private String carType = "NEW";
+
+    @Column(name = "dealer_id")
     private Long dealerId;
 
-    @Column(name = "vehicle_id", nullable = false)
+    @Column(name = "vehicle_id")
     private Long vehicleId;
 
     @Column(name = "vehicle_name", length = 255)
@@ -58,6 +62,43 @@ public class DealerDeal {
 
     @Column(name = "total_savings", precision = 12, scale = 2)
     private BigDecimal totalSavings;
+
+    // ── Used Car specific fields ───────────────────────────
+    @Column(name = "uc_year")
+    private Integer ucYear;
+
+    @Column(name = "uc_km_driven")
+    private Integer ucKmDriven;
+
+    @Column(name = "uc_fuel_type", length = 50)
+    private String ucFuelType;
+
+    @Column(name = "uc_owner_type", length = 20)
+    private String ucOwnerType;
+
+    @Column(name = "uc_transmission", length = 20)
+    private String ucTransmission;
+
+    @Column(name = "uc_color", length = 50)
+    private String ucColor;
+
+    @Column(name = "uc_asking_price", precision = 12, scale = 2)
+    private java.math.BigDecimal ucAskingPrice;
+
+    @Column(name = "uc_registration_state", length = 50)
+    private String ucRegistrationState;
+
+    @Column(name = "uc_source_website", length = 100)
+    private String ucSourceWebsite;
+
+    @Column(name = "uc_listing_url", length = 500)
+    private String ucListingUrl;
+
+    @Column(name = "uc_deal_tag", length = 20)
+    private String ucDealTag;
+
+    @Column(name = "uc_deal_score")
+    private Integer ucDealScore;
 
     // Dates
     @Column(name = "start_date")

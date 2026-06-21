@@ -1,44 +1,162 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 
-<!-- Navbar fragment: th:replace="~{website/fragments/layout :: nav('home')}" -->
-<nav th:fragment="nav(active)" class="navbar navbar-expand-lg navbar-dark fixed-top" id="mainNav">
+<!-- ═══════════════════════════════════════════════════════
+     FULL PAGE WRAPPER  (includes top-bar + nav)
+     Usage: th:replace="~{website/fragments/layout :: nav('home')}"
+     ═══════════════════════════════════════════════════════ -->
+<th:block th:fragment="nav(active)">
+
+<!-- Progress bar -->
+<div id="pageProgress"></div>
+
+<!-- Top announcement bar -->
+<div class="top-bar">
+    <div class="container">
+        <div class="top-bar-inner">
+            <div class="top-bar-left">
+                <span class="top-bar-item"><i class="fas fa-fire"></i> Limited Time: Save up to ₹1L on top models</span>
+                <span class="top-bar-item d-none d-md-flex"><i class="fas fa-check-circle"></i> Verified Dealer Offers</span>
+            </div>
+            <div class="top-bar-right">
+                <a class="top-bar-item" href="tel:+911800XXXXX"><i class="fas fa-phone"></i> 1800-XXX-XXXX</a>
+                <a class="top-bar-item" href="/used-cars"><i class="fas fa-recycle"></i> Used Cars</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top" th:classappend="${active != 'home'} ? 'nav-solid'" id="mainNav" style="top:33px">
     <div class="container">
         <a class="navbar-brand" href="/">
             <span class="brand-mark"><i class="fas fa-car-side"></i></span>
             <span class="brand-text">CarDekho <em>Deals</em></span>
         </a>
-        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+
+        <!-- Mobile toggle -->
+        <div class="d-flex align-items-center gap-2 d-lg-none">
+            <a href="/vehicles?search=" class="text-white" style="font-size:18px;opacity:.7"><i class="fas fa-search"></i></a>
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
+
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto align-items-lg-center">
                 <li class="nav-item">
                     <a class="nav-link" th:classappend="${active == 'home'} ? 'active'" href="/">Home</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" th:classappend="${active == 'vehicles'} ? 'active'" href="/vehicles">New Cars</a>
+                    <a class="nav-link" th:classappend="${active == 'vehicles'} ? 'active'" href="/vehicles">
+                        <i class="fas fa-car" style="font-size:11px;opacity:.7"></i> New Cars
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" th:classappend="${active == 'used-cars'} ? 'active'" href="/used-cars">Used Cars</a>
+                    <a class="nav-link" th:classappend="${active == 'used-cars'} ? 'active'" href="/used-cars">
+                        <i class="fas fa-recycle" style="font-size:11px;opacity:.7"></i> Used Cars
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" th:classappend="${active == 'contact'} ? 'active'" href="/contact">Contact</a>
+                    <a class="nav-link" th:classappend="${active == 'loan-calculator'} ? 'active'" href="/loan-calculator">
+                        <i class="fas fa-hand-holding-usd" style="font-size:11px;opacity:.7"></i> Loan
+                    </a>
                 </li>
-                <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
-                    <a class="btn btn-nav-cta" href="/vehicles"><i class="fas fa-tags me-1"></i>View Deals</a>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="${autopartsUrl}" target="_blank" rel="noopener">🔩 Auto Parts</a>
                 </li>
             </ul>
+
+            <!-- Desktop inline search -->
+            <form class="nav-search-form ms-3 d-none d-lg-flex" action="/vehicles" method="get">
+                <i class="fas fa-search"></i>
+                <input type="text" name="search" placeholder="Search cars..." autocomplete="off">
+            </form>
+
+            <a class="btn btn-nav-cta ms-lg-3 mt-2 mt-lg-0" href="/vehicles?hasDeals=true">
+                <i class="fas fa-tags me-1"></i>View Deals
+            </a>
         </div>
     </div>
 </nav>
 
-<!-- Footer fragment -->
+<!-- Mobile Bottom Navigation -->
+<nav class="mobile-bottom-nav">
+    <div class="mbn-inner">
+        <a th:href="@{/}" class="mbn-item" th:classappend="${active == 'home'} ? 'active'">
+            <i class="fas fa-home"></i><span>Home</span>
+        </a>
+        <a th:href="@{/vehicles}" class="mbn-item" th:classappend="${active == 'vehicles'} ? 'active'">
+            <i class="fas fa-car"></i><span>New Cars</span>
+        </a>
+        <a th:href="@{/used-cars}" class="mbn-item" th:classappend="${active == 'used-cars'} ? 'active'">
+            <i class="fas fa-recycle"></i><span>Used Cars</span>
+        </a>
+        <a th:href="@{/#deals}" class="mbn-item" th:classappend="${active == 'offers'} ? 'active'">
+            <i class="fas fa-tags"></i><span>Deals</span>
+        </a>
+        <a th:href="@{/contact}" class="mbn-item" th:classappend="${active == 'contact'} ? 'active'">
+            <i class="fas fa-headset"></i><span>Contact</span>
+        </a>
+    </div>
+</nav>
+
+<!-- Floating WhatsApp -->
+<a href="https://wa.me/?text=Hi%2C+I+am+looking+for+the+best+car+deals.+Please+help+me." target="_blank"
+   class="float-wa" title="Chat on WhatsApp">
+    <i class="fab fa-whatsapp"></i>
+</a>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+(function(){
+    // Top bar offset for nav
+    var topBar = document.querySelector('.top-bar');
+    var nav = document.getElementById('mainNav');
+    if (topBar && nav) {
+        function updateNavTop() {
+            nav.style.top = window.innerWidth > 768 ? topBar.offsetHeight + 'px' : '0';
+        }
+        updateNavTop();
+        window.addEventListener('resize', updateNavTop);
+    }
+    // Scroll solid
+    window.addEventListener('scroll', function(){
+        if (nav) nav.classList.toggle('scrolled', window.scrollY > 60);
+    }, {passive:true});
+    // Page progress
+    var bar = document.getElementById('pageProgress');
+    if (bar) {
+        window.addEventListener('scroll', function(){
+            var h = document.documentElement.scrollHeight - window.innerHeight;
+            bar.style.width = (h > 0 ? (window.scrollY / h * 100) : 0) + '%';
+        }, {passive:true});
+    }
+})();
+function showToast(msg, type) {
+    var c = document.getElementById('toastContainer');
+    if (!c) return;
+    var t = document.createElement('div');
+    t.className = 'toast-msg' + (type ? ' ' + type : '');
+    t.innerHTML = '<i class="fas fa-' + (type === 'success' ? 'check-circle' : 'info-circle') + '"></i> ' + msg;
+    c.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 3000);
+}
+</script>
+</th:block>
+
+<!-- ═══════════════════════════════════════════════════════
+     FOOTER
+     ═══════════════════════════════════════════════════════ -->
 <footer th:fragment="footer" class="site-footer">
     <div class="container">
         <div class="row g-4">
             <div class="col-md-4">
-                <h5 class="footer-brand"><span class="brand-mark-sm"><i class="fas fa-car-side"></i></span> CarDekho Deals</h5>
+                <h5 class="footer-brand">
+                    <span class="brand-mark-sm"><i class="fas fa-car-side"></i></span> CarDekho Deals
+                </h5>
                 <p class="footer-desc">India's trusted platform to compare new car prices, discover dealer offers, and save on your next car purchase.</p>
                 <div class="footer-social">
                     <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
@@ -50,30 +168,49 @@
             <div class="col-md-2 col-6">
                 <h6 class="footer-heading">Explore</h6>
                 <ul class="footer-links">
-                    <li><a href="/vehicles">All Cars</a></li>
-                    <li><a href="/vehicles">Latest Deals</a></li>
-                    <li><a href="/about">About Us</a></li>
-                    <li><a href="/contact">Contact</a></li>
+                    <li><a href="/vehicles">All New Cars</a></li>
+                    <li><a href="/used-cars">Used Cars</a></li>
+                    <li><a href="/#deals">Hot Deals</a></li>
+                    <li><a href="/fuel-calculator">Fuel Cost</a></li>
+                    <li><a href="/loan-calculator">Loan Eligibility</a></li>
+                    <li><a href="/contact">Contact Us</a></li>
                 </ul>
             </div>
             <div class="col-md-2 col-6">
-                <h6 class="footer-heading">Popular</h6>
+                <h6 class="footer-heading">Developer Tools</h6>
+                <ul class="footer-links">
+                    <li>
+                        <a href="http://localhost:4200" target="_blank" style="display:flex;align-items:center;gap:6px">
+                            <i class="fas fa-vial" style="color:var(--primary);font-size:11px"></i>
+                            API Testcase Validator
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-md-2 col-6">
+                <h6 class="footer-heading">Top Brands</h6>
                 <ul class="footer-links">
                     <li><a href="/brand/maruti-suzuki">Maruti Suzuki</a></li>
                     <li><a href="/brand/hyundai">Hyundai</a></li>
                     <li><a href="/brand/tata">Tata</a></li>
                     <li><a href="/brand/mahindra">Mahindra</a></li>
+                    <li><a href="/brand/kia">Kia</a></li>
                 </ul>
             </div>
             <div class="col-md-4">
                 <h6 class="footer-heading">Get Best Price</h6>
-                <p class="footer-desc mb-3">Connect with authorized dealers and unlock exclusive discounts.</p>
-                <a href="/vehicles" class="btn btn-primary-gradient btn-sm"><i class="fas fa-bolt me-1"></i>Browse Cars &amp; Deals</a>
+                <p class="footer-desc mb-3">Connect with authorized dealers and unlock exclusive discounts on your dream car.</p>
+                <a href="tel:+911800XXXXX" class="footer-desc d-flex align-items-center gap-2 mb-2" style="color:rgba(255,255,255,.6);text-decoration:none">
+                    <i class="fas fa-phone" style="color:var(--primary)"></i> 1800-XXX-XXXX (Free)
+                </a>
+                <a href="/vehicles" class="btn btn-primary-gradient btn-sm">
+                    <i class="fas fa-bolt me-1"></i>Browse Cars &amp; Deals
+                </a>
             </div>
         </div>
         <hr class="footer-divider">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 footer-copy">
-            <span>&copy; 2024 CarDekho Deals. All rights reserved.</span>
+            <span>&copy; 2025 CarDekho Deals. All rights reserved.</span>
             <span class="text-muted-footer">Prices are indicative. Ex-showroom. Offers subject to dealer terms.</span>
         </div>
     </div>
@@ -93,16 +230,14 @@
                  th:src="${vehicle.thumbnailImage}" th:alt="${vehicle.name}"
                  loading="lazy"
                  onerror="this.style.display='none';this.nextElementSibling.classList.add('show')">
-            <div class="no-img-placeholder" style="display:none" th:style="${#strings.isEmpty(vehicle.heroImage) and #strings.isEmpty(vehicle.thumbnailImage)} ? '' : 'display:none'">
-                <i class="fas fa-car" aria-hidden="true"></i>
+            <div class="no-img-placeholder" th:style="${#strings.isEmpty(vehicle.heroImage) and #strings.isEmpty(vehicle.thumbnailImage)} ? '' : 'display:none'">
+                <i class="fas fa-car"></i>
             </div>
-            <!-- Deal badge - prominent green pill -->
-            <span th:if="${vehicleDeals != null and vehicleDeals.containsKey(vehicle.id)}"
-                  class="vehicle-deal-badge">
+            <span th:if="${vehicleDeals != null and vehicleDeals.containsKey(vehicle.id)}" class="vehicle-deal-badge">
                 <i class="fas fa-bolt" style="font-size:9px"></i>
                 Save ₹<span th:text="${#numbers.formatDecimal(vehicleDeals.get(vehicle.id).get('maxSavings'), 1, 0)}"></span>
             </span>
-            <span th:if="${vehicle.brand != null}" class="vehicle-brand-chip" th:text="${vehicle.brand}">Brand</span>
+            <span th:if="${vehicle.brand != null}" class="vehicle-brand-chip" th:text="${vehicle.brand}"></span>
         </div>
         <div class="card-body">
             <h3 class="vehicle-card-title" th:text="${vehicle.name}">Vehicle</h3>
@@ -112,7 +247,6 @@
                 <span th:if="${vehicle.transmissionType != null}" class="spec-badge"><i class="fas fa-cog"></i><span th:text="${vehicle.transmissionType}"></span></span>
                 <span th:if="${vehicle.seatingCapacity != null}" class="spec-badge"><i class="fas fa-users"></i><span th:text="${vehicle.seatingCapacity + ' Seater'}"></span></span>
             </div>
-            <!-- Price row with effective price if deal exists -->
             <div class="d-flex align-items-end justify-content-between mt-auto pt-2">
                 <div th:if="${vehicle.startingPrice != null}">
                     <div class="vehicle-card-price">

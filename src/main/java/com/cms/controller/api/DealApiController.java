@@ -33,6 +33,50 @@ public class DealApiController {
         return ResponseEntity.ok(dealRepo.findByIsDeletedFalseOrderByPriorityDescCreatedAtDesc());
     }
 
+    @GetMapping("/used")
+    public ResponseEntity<?> getUsedCarDeals() {
+        List<DealerDeal> deals = dealRepo.findByCarTypeAndIsActiveTrueAndIsDeletedFalse("USED");
+        List<Map<String, Object>> enriched = new ArrayList<>();
+        for (DealerDeal d : deals) {
+            Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("id", d.getId());
+            m.put("carType", d.getCarType());
+            m.put("vehicleId", d.getVehicleId());
+            m.put("vehicleName", d.getVehicleName());
+            m.put("dealerName", d.getDealerName());
+            m.put("city", d.getCity());
+            m.put("title", d.getTitle());
+            m.put("cashDiscount", d.getCashDiscount());
+            m.put("ucYear", d.getUcYear());
+            m.put("ucKmDriven", d.getUcKmDriven());
+            m.put("ucFuelType", d.getUcFuelType());
+            m.put("ucOwnerType", d.getUcOwnerType());
+            m.put("ucTransmission", d.getUcTransmission());
+            m.put("ucColor", d.getUcColor());
+            m.put("ucAskingPrice", d.getUcAskingPrice());
+            m.put("ucRegistrationState", d.getUcRegistrationState());
+            m.put("ucSourceWebsite", d.getUcSourceWebsite());
+            m.put("ucListingUrl", d.getUcListingUrl());
+            m.put("ucDealTag", d.getUcDealTag());
+            m.put("ucDealScore", d.getUcDealScore());
+            m.put("priority", d.getPriority());
+            m.put("isFeatured", d.getIsFeatured());
+            m.put("isActive", d.getIsActive());
+            // Resolve vehicle image from linked vehicle
+            String imageUrl = null;
+            if (d.getVehicleId() != null) {
+                imageUrl = vehicleRepo.findById(d.getVehicleId()).map(v -> {
+                    String img = v.getHeroImage();
+                    if (img == null || img.isBlank()) img = v.getThumbnailImage();
+                    return img;
+                }).orElse(null);
+            }
+            m.put("vehicleImageUrl", imageUrl);
+            enriched.add(m);
+        }
+        return ResponseEntity.ok(enriched);
+    }
+
     @GetMapping("/active")
     public ResponseEntity<?> getActiveDeals() {
         return ResponseEntity.ok(dealRepo.findActiveDeals());
@@ -91,6 +135,20 @@ public class DealApiController {
             if (deal.getPriority() != null) existing.setPriority(deal.getPriority());
             if (deal.getIsFeatured() != null) existing.setIsFeatured(deal.getIsFeatured());
             if (deal.getIsActive() != null) existing.setIsActive(deal.getIsActive());
+            if (deal.getCarType() != null) existing.setCarType(deal.getCarType());
+            // Used car fields
+            if (deal.getUcYear() != null) existing.setUcYear(deal.getUcYear());
+            if (deal.getUcKmDriven() != null) existing.setUcKmDriven(deal.getUcKmDriven());
+            if (deal.getUcFuelType() != null) existing.setUcFuelType(deal.getUcFuelType());
+            if (deal.getUcOwnerType() != null) existing.setUcOwnerType(deal.getUcOwnerType());
+            if (deal.getUcTransmission() != null) existing.setUcTransmission(deal.getUcTransmission());
+            if (deal.getUcColor() != null) existing.setUcColor(deal.getUcColor());
+            if (deal.getUcAskingPrice() != null) existing.setUcAskingPrice(deal.getUcAskingPrice());
+            if (deal.getUcRegistrationState() != null) existing.setUcRegistrationState(deal.getUcRegistrationState());
+            if (deal.getUcSourceWebsite() != null) existing.setUcSourceWebsite(deal.getUcSourceWebsite());
+            if (deal.getUcListingUrl() != null) existing.setUcListingUrl(deal.getUcListingUrl());
+            if (deal.getUcDealTag() != null) existing.setUcDealTag(deal.getUcDealTag());
+            if (deal.getUcDealScore() != null) existing.setUcDealScore(deal.getUcDealScore());
             return ResponseEntity.ok(Map.of("data", dealRepo.save(existing)));
         }).orElse(ResponseEntity.notFound().build());
     }
