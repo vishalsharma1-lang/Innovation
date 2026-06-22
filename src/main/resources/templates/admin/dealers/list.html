@@ -38,9 +38,8 @@
                 <div class="row g-3">
                     <div class="col-md-6"><label class="form-label">Dealer Name *</label><input type="text" id="dName" class="form-control" required></div>
                     <div class="col-md-6"><label class="form-label">Brand *</label>
-                        <select id="dBrand" class="form-select" required>
-                            <option value="">-- Select Brand --</option>
-                        </select>
+                        <input type="text" id="dBrand" class="form-control" placeholder="e.g. Tata, Honda, Maruti..." list="brandSuggestions" required autocomplete="off">
+                        <datalist id="brandSuggestions"></datalist>
                     </div>
                     <div class="col-md-6"><label class="form-label">Phone</label><input type="tel" id="dPhone" class="form-control"></div>
                     <div class="col-md-6"><label class="form-label">Email</label><input type="email" id="dEmail" class="form-control"></div>
@@ -76,9 +75,8 @@ async function loadBrands() {
     const brandSet = new Set();
     vehicles.forEach(v => { if (v.brand) brandSet.add(v.brand); });
     vehicleBrands = Array.from(brandSet).sort();
-    const select = document.getElementById('dBrand');
-    select.innerHTML = '<option value="">-- Select Brand --</option>';
-    vehicleBrands.forEach(b => { select.innerHTML += `<option value="${b}">${b}</option>`; });
+    const dl = document.getElementById('brandSuggestions');
+    dl.innerHTML = vehicleBrands.map(b => `<option value="${b}">`).join('');
 }
 
 function loadDealers() {
@@ -124,9 +122,8 @@ function editDealer(id) {
 }
 function saveDealer() {
     const name = document.getElementById('dName').value.trim();
-    const brand = document.getElementById('dBrand').value;
+    const brand = document.getElementById('dBrand').value.trim();
     if (!name) { alert('Dealer name is required'); return; }
-    if (!brand) { alert('Please select a brand'); return; }
     const id = document.getElementById('dealerId').value;
     const payload = { dealerName: name, brand: brand, phone: document.getElementById('dPhone').value, email: document.getElementById('dEmail').value, city: document.getElementById('dCity').value, state: document.getElementById('dState').value, address: document.getElementById('dAddress').value, dealerLogo: document.getElementById('dLogo').value, dealerType: document.getElementById('dType').value, isActive: document.getElementById('dStatus').value === 'true' };
     const url = id ? `/api/deals/dealers/${id}` : '/api/deals/dealers';

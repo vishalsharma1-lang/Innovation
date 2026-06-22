@@ -208,6 +208,9 @@
         </a>
 
         <div class="nav-section-title">System</div>
+        <a th:href="@{/admin/themes}" th:classappend="${#httpServletRequest.requestURI.contains('/themes') ? 'active' : ''}">
+            <i class="fas fa-palette"></i> Theme Management
+        </a>
         <a th:href="@{/admin/settings}" th:classappend="${#httpServletRequest.requestURI.contains('/settings') ? 'active' : ''}">
             <i class="fas fa-cog"></i> Settings
         </a>

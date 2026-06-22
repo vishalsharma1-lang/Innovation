@@ -35,8 +35,11 @@ public class DealApiController {
 
     @GetMapping("/used")
     public ResponseEntity<?> getUsedCarDeals() {
-        List<DealerDeal> deals = dealRepo.findByCarTypeAndIsActiveTrueAndIsDeletedFalse("USED");
         List<Map<String, Object>> enriched = new ArrayList<>();
+
+        // 1. Deal-based USED listings
+        List<DealerDeal> deals = dealRepo.findByCarTypeAndIsActiveTrueAndIsDeletedFalse("USED");
+        Set<Long> dealVehicleIds = new HashSet<>();
         for (DealerDeal d : deals) {
             Map<String, Object> m = new java.util.LinkedHashMap<>();
             m.put("id", d.getId());
@@ -62,9 +65,9 @@ public class DealApiController {
             m.put("priority", d.getPriority());
             m.put("isFeatured", d.getIsFeatured());
             m.put("isActive", d.getIsActive());
-            // Resolve vehicle image from linked vehicle
             String imageUrl = null;
             if (d.getVehicleId() != null) {
+                dealVehicleIds.add(d.getVehicleId());
                 imageUrl = vehicleRepo.findById(d.getVehicleId()).map(v -> {
                     String img = v.getHeroImage();
                     if (img == null || img.isBlank()) img = v.getThumbnailImage();
@@ -74,6 +77,41 @@ public class DealApiController {
             m.put("vehicleImageUrl", imageUrl);
             enriched.add(m);
         }
+
+        // 2. USED vehicles with no deal — show them as plain listings
+        vehicleRepo.findByVehicleTypeAndIsActiveTrueAndIsDeletedFalse("USED").stream()
+            .filter(v -> !dealVehicleIds.contains(v.getId()))
+            .forEach(v -> {
+                Map<String, Object> m = new java.util.LinkedHashMap<>();
+                m.put("id", "v-" + v.getId());
+                m.put("carType", "USED");
+                m.put("vehicleId", v.getId());
+                m.put("vehicleName", v.getName());
+                m.put("dealerName", null);
+                m.put("city", null);
+                m.put("title", v.getShortDescription());
+                m.put("cashDiscount", null);
+                m.put("ucYear", v.getRegistrationYear());
+                m.put("ucKmDriven", v.getKmDriven());
+                m.put("ucFuelType", v.getFuelType());
+                m.put("ucOwnerType", v.getOwnershipCount() != null ? v.getOwnershipCount() + " Owner" : null);
+                m.put("ucTransmission", v.getTransmissionType());
+                m.put("ucColor", null);
+                m.put("ucAskingPrice", v.getStartingPrice());
+                m.put("ucRegistrationState", v.getRegistrationState());
+                m.put("ucSourceWebsite", null);
+                m.put("ucListingUrl", null);
+                m.put("ucDealTag", "NORMAL");
+                m.put("ucDealScore", null);
+                m.put("priority", 0);
+                m.put("isFeatured", v.getIsFeatured());
+                m.put("isActive", v.getIsActive());
+                String img = v.getHeroImage();
+                if (img == null || img.isBlank()) img = v.getThumbnailImage();
+                m.put("vehicleImageUrl", img);
+                enriched.add(m);
+            });
+
         return ResponseEntity.ok(enriched);
     }
 
